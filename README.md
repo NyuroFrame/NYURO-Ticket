@@ -1,98 +1,90 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NYURO Ticket
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NYURO Ticket es un SaaS/framework configurable para soporte organizacional. No queremos construir solamente un sistema de tickets; queremos una plataforma donde cada tenant pueda modelar su propia organización, áreas, usuarios, agentes, reglas de soporte, IA de contingencia y soporte remoto de forma progresiva.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Visión
 
-## Description
+El cliente que contrata el sistema será un tenant. Un tenant puede representar una empresa, institución educativa, institución pública o grupo empresarial. Dentro del tenant se podrán crear una o varias organizaciones. Cada organización podrá modelar sus áreas, sedes, facultades, departamentos o equipos como un árbol configurable.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Ejemplo:
 
-## Project setup
-
-```bash
-$ pnpm install
+```txt
+Tenant Demo
+└── Organización Principal
+    ├── TI
+    │   ├── Soporte
+    │   └── Infraestructura
+    ├── Administración
+    └── Facultad / Área / Departamento
 ```
 
-## Compile and run the project
+El sistema debe permitir que cada tenant arme su estructura real sin llenarlo de áreas por defecto que no necesita.
 
-```bash
-# development
-$ pnpm run start
+## MVP
 
-# watch mode
-$ pnpm run start:dev
+El MVP debe demostrar:
 
-# production mode
-$ pnpm run start:prod
+- Tenant y organización.
+- Dominios corporativos permitidos.
+- Usuarios asociados a organizaciones y áreas.
+- Árbol de áreas/unidades organizacionales.
+- Roles y permisos básicos.
+- Tickets funcionales.
+- Mensajes en tickets.
+- Asignación manual de agentes.
+- Auditoría básica.
+- IA de contingencia simple.
+- Soporte remoto básico preparado como integración.
+- Dashboard mínimo.
+- Aislamiento estricto entre tenants.
+
+No construiremos billing final, Kubernetes, gRPC interno, microservicios completos, RAG avanzado, VPN/NAS automatizado ni despliegue automático de RustDesk en el MVP.
+
+## Principios
+
+1. Tenant primero.
+2. No fuga entre tenants.
+3. La plataforma monitorea salud técnica, no contenido privado del tenant.
+4. Monolito modular primero; microservicios solo cuando haya razón real.
+5. IA como apoyo, no como dependencia crítica.
+6. RustDesk como integración, no como núcleo.
+7. Todo cambio debe nacer de un issue claro.
+
+## Arquitectura inicial
+
+```txt
+apps/
+  web/          # Frontend Next.js
+  api/          # Backend NestJS
+  ai-service/   # Servicio auxiliar Python/FastAPI
+
+packages/
+  database/     # Prisma schema/client
+  shared/       # Tipos y utilidades compartidas
+  contracts/    # Contratos internos futuros
 ```
 
-## Run tests
+Stack base:
 
-```bash
-# unit tests
-$ pnpm run test
+- Next.js
+- NestJS
+- PostgreSQL
+- Prisma
+- Redis cuando aplique
+- Python/FastAPI para IA
+- Docker Compose para desarrollo y primera alpha
+- Kubernetes solo cuando exista necesidad real
 
-# e2e tests
-$ pnpm run test:e2e
+## Metodología
 
-# test coverage
-$ pnpm run test:cov
+```txt
+Roadmap → Milestones → Issues → Branch → Pull Request → Review → Tests → Merge
 ```
 
-## Deployment
+Cada issue debe explicar objetivo, contexto, alcance, criterios de aceptación, riesgos, validaciones y consideraciones de seguridad/multi-tenancy.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Cada PR debe incluir checklist de validación, especialmente seguridad y aislamiento de tenant.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Regla del proyecto
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+No construiremos todo NYURO Ticket de golpe. Primero construiremos el camino mínimo para demostrar que NYURO Ticket puede existir de forma profesional, segura, configurable y vendible.
