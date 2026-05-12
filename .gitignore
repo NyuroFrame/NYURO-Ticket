@@ -1,7 +1,13 @@
 # compiled output
-/dist
-/node_modules
-/build
+dist
+node_modules
+build
+.next
+.turbo
+__pycache__
+*.pyc
+*.pyo
+.venv
 
 # Logs
 logs

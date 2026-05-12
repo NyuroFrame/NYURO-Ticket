@@ -1,0 +1,10 @@
+[project]
+name = "ai-service"
+version = "0.0.1"
+description = "AI wrapper service for Nyuro Ticket System"
+requires-python = ">=3.11"
+
+[tool.uvicorn]
+host = "0.0.0.0"
+port = 8001
+reload = true
