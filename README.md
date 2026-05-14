@@ -1,30 +1,29 @@
 # NYURO Ticket
 
-NYURO Ticket es un SaaS/framework configurable para soporte organizacional.
+NYURO Ticket es un proyecto SaaS/framework configurable para soporte organizacional.
 
-La idea no es construir solamente un sistema de tickets tradicional. El objetivo es crear una plataforma donde cada cliente pueda modelar su propia organización, configurar sus áreas internas, administrar usuarios, agentes de soporte, tickets, IA de contingencia y soporte remoto integrado con RustDesk de forma progresiva.
+La visión del producto es construir una plataforma donde cada cliente pueda modelar su propia organización, configurar áreas internas, administrar usuarios, agentes de soporte, tickets, IA de contingencia y soporte remoto integrado con RustDesk.
 
-Este proyecto está pensado para empresas, instituciones educativas, instituciones públicas y organizaciones que no tienen todas la misma estructura interna. Por eso, el sistema debe ser flexible desde su base.
+Este README separa claramente dos cosas:
+
+1. La visión del software que se quiere construir.
+2. El estado actual real del repositorio.
+
+El proyecto todavía está en etapa de fundación. No todo lo descrito en la visión está implementado actualmente.
 
 ---
 
-## Visión del producto
+## Visión del software
 
-En NYURO Ticket, el cliente que contrata el sistema será un **tenant**.
+NYURO Ticket no busca ser solo un sistema de tickets tradicional.
 
-Un tenant puede representar:
+La idea es crear un SaaS flexible para empresas, instituciones educativas, instituciones públicas, universidades, colegios, municipalidades o grupos empresariales que necesitan organizar su soporte de acuerdo con su propia estructura interna.
 
-- una empresa,
-- una institución educativa,
-- una institución pública,
-- una universidad,
-- un colegio,
-- una municipalidad,
-- o un grupo empresarial con varias organizaciones internas.
+En el sistema, el cliente que contrata el servicio será un **tenant**.
 
-Dentro de cada tenant se podrán crear una o varias organizaciones. Cada organización podrá configurar sus áreas, sedes, facultades, departamentos, oficinas o equipos internos en forma de árbol.
+Un tenant podrá tener una o varias organizaciones. Cada organización podrá configurar sus áreas, sedes, facultades, departamentos, oficinas o equipos internos como un árbol.
 
-Ejemplo simple:
+Ejemplo:
 
 ```txt
 Tenant Demo
@@ -36,15 +35,37 @@ Tenant Demo
     └── Facultad / Área / Departamento
 ```
 
-La idea es que el tenant arme su estructura real según cómo funciona su organización, sin llenarlo de áreas por defecto que no necesita.
+La idea es que el tenant pueda armar su estructura real sin que el sistema lo obligue a usar áreas por defecto que no necesita.
 
 ---
 
-## Alcance del MVP
+## Flujo general esperado del producto
 
-El MVP debe demostrar que NYURO Ticket puede funcionar como una base profesional, segura y configurable.
+El flujo general que se quiere construir es el siguiente:
 
-El MVP debe incluir:
+1. El cliente contrata NYURO Ticket y se crea su tenant.
+2. El tenant configura una o varias organizaciones.
+3. Cada organización configura sus dominios corporativos permitidos.
+4. Los usuarios podrán iniciar sesión con correos válidos según los dominios configurados.
+5. El tenant configura sus áreas o unidades organizacionales en forma de árbol.
+6. Los usuarios se asignan a organizaciones y áreas según corresponda.
+7. Se definen roles como administradores, supervisores, agentes de soporte y usuarios solicitantes.
+8. Los usuarios finales crean tickets según sus necesidades.
+9. La IA de contingencia puede apoyar con preguntas iniciales, clasificación, sugerencias o resumen del caso.
+10. Si el problema requiere atención humana, un supervisor o el sistema asigna el ticket a un agente.
+11. El agente atiende el ticket con el contexto previo, incluyendo lo que la IA intentó o sugirió.
+12. Si el caso requiere conexión remota, se podrá asociar una sesión de soporte remoto con RustDesk al ticket.
+13. El sistema registra mensajes, cambios de estado, asignaciones, sesiones remotas y acciones importantes en la trazabilidad del ticket.
+14. El ticket puede resolverse, cerrarse, reabrirse o valorarse según el flujo definido.
+15. Los supervisores podrán revisar reportes, métricas y actividad de soporte sin que NYURO acceda al contenido privado del tenant.
+
+---
+
+## Alcance esperado del MVP
+
+El MVP debe demostrar la base funcional del producto.
+
+El MVP esperado incluirá:
 
 - Gestión de tenants.
 - Gestión de organizaciones dentro del tenant.
@@ -54,10 +75,10 @@ El MVP debe incluir:
 - Roles y permisos básicos.
 - Sistema de tickets funcional.
 - Mensajes o comentarios dentro de tickets.
-- Asignación manual de tickets a agentes.
+- Asignación de tickets a agentes.
 - Auditoría básica de acciones importantes.
-- IA de contingencia simple para apoyar el flujo inicial de soporte.
-- Soporte remoto integrado con RustDesk, con alcance controlado para el MVP.
+- IA de contingencia simple.
+- Soporte remoto integrado con RustDesk con alcance controlado.
 - Dashboard mínimo para supervisión.
 - Aislamiento estricto entre tenants.
 
@@ -72,7 +93,7 @@ En el MVP se busca:
 - registrar qué usuario solicitó o autorizó la atención,
 - guardar código, enlace o identificador de sesión cuando aplique,
 - registrar inicio, cierre y resultado de la sesión,
-- mostrar la sesión dentro del timeline del ticket,
+- mostrar la sesión dentro del historial o timeline del ticket,
 - auditar las acciones relacionadas al soporte remoto,
 - validar permisos antes de permitir soporte remoto.
 
@@ -102,87 +123,78 @@ Los planes comerciales se definirán después de validar el MVP con pruebas real
 
 ---
 
-## Stack técnico inicial
+## Estado actual real del repositorio
 
-El stack base del proyecto es:
+Actualmente el repositorio se encuentra en etapa inicial de fundación.
 
-- **Next.js** para el frontend.
-- **NestJS** para el backend principal.
-- **PostgreSQL** como base de datos principal.
-- **Prisma** para el modelo de datos y acceso a base de datos.
-- **Redis** para uso futuro en cache, colas, rate limiting o presencia.
-- **Python/FastAPI** para el servicio auxiliar de IA.
+Lo que existe actualmente:
+
+- Monorepo con `pnpm` y `turbo`.
+- Workspace configurado para `apps/*` y `packages/*`.
+- Aplicación backend base en `apps/api` con NestJS.
+- Aplicación frontend base en `apps/web` con Next.js.
+- Paquete de base de datos en `packages/database` con Prisma.
+- Modelo Prisma inicial con `User`, `Ticket` y enums básicos.
+- `docker-compose.yml` con servicios declarados para PostgreSQL, Redis, API y AI service.
+- Scripts raíz para `build`, `dev`, `test`, `lint`, `format` y comandos de base de datos.
+
+Lo que todavía no está implementado:
+
+- Multi-tenancy real.
+- Modelo de tenant, organización, dominios y áreas tipo árbol.
+- Autenticación real.
+- Roles y permisos reales.
+- Tickets funcionales conectados al modelo final.
+- Auditoría.
+- IA de contingencia funcional.
+- Servicio `apps/ai-service` implementado.
+- Servicio o módulo real de RustDesk.
+- Dockerfiles necesarios para algunos servicios declarados en Docker Compose.
+- Dashboard.
+- Billing.
+- Kubernetes.
+
+Nota importante: el `docker-compose.yml` ya declara servicios que forman parte de la dirección técnica del proyecto, pero algunas piezas todavía no existen o no están listas. Eso se irá corrigiendo en las siguientes issues del milestone de fundación.
+
+---
+
+## Stack técnico actual y previsto
+
+Actualmente el repositorio ya usa o declara:
+
+- **pnpm** como package manager.
+- **Turborepo** para orquestar scripts del monorepo.
+- **NestJS** en `apps/api`.
+- **Next.js** en `apps/web`.
+- **PostgreSQL** como base de datos prevista.
+- **Prisma** en `packages/database`.
+- **Redis** declarado en Docker Compose para uso futuro.
+- **Docker Compose** como base de entorno local.
+
+Previsto para el MVP:
+
+- **Python/FastAPI** para IA de contingencia.
 - **RustDesk** como integración de soporte remoto.
-- **Docker Compose** para entorno local y primera base de despliegue.
-- **Turborepo + pnpm** para trabajar el monorepo.
+- Módulos internos para multi-tenancy, organizaciones, áreas, usuarios, permisos, tickets, auditoría, IA y soporte remoto.
 
-Kubernetes, microservicios y comunicación interna avanzada quedan para fases posteriores, cuando exista una necesidad real.
-
----
-
-## Arquitectura inicial
-
-NYURO Ticket empezará como un **monorepo modular**.
-
-La idea inicial es trabajar con un backend principal como monolito modular, un frontend modular, un servicio auxiliar de IA y una integración modular de soporte remoto con RustDesk.
-
-Estructura actual/base del proyecto:
-
-```txt
-apps/
-  api/          # Backend principal en NestJS
-  web/          # Frontend principal en Next.js
-
-packages/
-  database/     # Prisma, schema y cliente de base de datos
-```
-
-Estructura objetivo progresiva:
-
-```txt
-apps/
-  web/                    # Frontend Next.js
-  api/                    # Backend NestJS como monolito modular
-  ai-service/             # Servicio auxiliar Python/FastAPI para IA
-  remote-support-service/ # Servicio/capa auxiliar para RustDesk
-
-packages/
-  database/               # Prisma schema, migraciones y cliente
-  shared/                 # Tipos, constantes y utilidades compartidas
-  config/                 # Configuración compartida
-  logger/                 # Logging estructurado
-  contracts/              # Contratos entre frontend, backend, IA y soporte remoto
-
-infra/
-  docker/
-  scripts/
-
-docs/
-  producto/
-  arquitectura/
-  seguridad/
-  desarrollo/
-  integraciones/
-```
-
-La estructura objetivo se irá completando mediante issues del milestone de fundación y los siguientes milestones del MVP.
+Kubernetes, microservicios completos y comunicación interna avanzada quedan para fases posteriores.
 
 ---
 
-## Principios importantes del proyecto
+## Estructura actual del monorepo
 
-Estos principios deben guiar las decisiones técnicas del equipo:
+Estructura base actual:
 
-1. **Tenant primero**: todo dato operativo importante debe estar asociado a un tenant.
-2. **No fuga entre tenants**: un usuario de un tenant no debe ver, modificar ni inferir datos de otro tenant.
-3. **Privacidad del tenant**: NYURO debe monitorear salud técnica del SaaS, no contenido privado de los tenants.
-4. **Monolito modular primero**: el MVP no debe empezar como microservicios completos.
-5. **IA como apoyo**: si la IA falla, el ticket debe seguir funcionando.
-6. **RustDesk como integración modular**: soporte remoto debe estar aislado y auditado, no mezclado directamente con el núcleo de tickets.
-7. **PostgreSQL como fuente de verdad**: Redis no reemplaza la persistencia principal.
-8. **Seguridad en backend**: no basta con ocultar botones en frontend; toda acción sensible debe validarse en backend.
-9. **Auditoría desde temprano**: acciones importantes deben dejar trazabilidad.
-10. **Simplicidad antes que sobreingeniería**: no implementar infraestructura compleja antes de necesitarla.
+```txt
+apps/
+  api/       # Backend base en NestJS
+  web/       # Frontend base en Next.js
+
+packages/
+  database/  # Prisma y paquete de base de datos
+```
+
+La estructura modular completa todavía se definirá y ajustará en issues posteriores del milestone de fundación.
 
 ---
 
@@ -194,8 +206,6 @@ Para trabajar localmente se recomienda tener instalado:
 - pnpm 9 o superior.
 - Docker y Docker Compose.
 - Git.
-
-El proyecto usa pnpm como package manager.
 
 ---
 
@@ -218,54 +228,54 @@ pnpm install
 
 ## Variables de entorno
 
-El proyecto debe contar con un archivo `.env` local. Mientras se termina de formalizar `.env.example`, estas son las variables base que se usan o se usarán en el entorno local:
+El proyecto todavía no tiene una guía final de variables de entorno.
 
-```env
-NODE_ENV=development
+Como referencia inicial, el entorno local necesita variables para:
 
-POSTGRES_USER=nyuro
-POSTGRES_PASSWORD=nyuro_pass
-POSTGRES_DB=nyuro_tickets
-DATABASE_URL=postgresql://nyuro:nyuro_pass@localhost:5432/nyuro_tickets
+- entorno de ejecución,
+- conexión a PostgreSQL,
+- conexión a Redis,
+- puerto de la API.
 
-REDIS_URL=redis://localhost:6379
-
-API_PORT=3000
-WEB_PORT=3001
-AI_SERVICE_URL=http://localhost:8001
-```
+El archivo `.env.example` y la guía formal de entorno local se completarán en una issue específica del milestone de fundación.
 
 No se deben subir secretos reales al repositorio.
 
 ---
 
-## Cómo levantar el proyecto localmente
+## Cómo levantar el proyecto actualmente
 
-Levantar servicios base con Docker Compose:
+Instalar dependencias:
+
+```bash
+pnpm install
+```
+
+Levantar servicios base disponibles:
 
 ```bash
 docker compose up -d postgres redis
 ```
 
-Levantar el backend en modo desarrollo:
+Levantar backend en modo desarrollo:
 
 ```bash
 pnpm --filter @nyuro/api dev
 ```
 
-Levantar el frontend en modo desarrollo:
+Levantar frontend en modo desarrollo:
 
 ```bash
 pnpm --filter @nyuro/web dev
 ```
 
-También se puede usar el script global del monorepo:
+También existe el script general:
 
 ```bash
 pnpm dev
 ```
 
-Nota: el entorno local todavía está en etapa de fundación. Algunas piezas como IA, RustDesk y scripts finales de entorno se completarán mediante issues específicos del roadmap.
+Nota: todavía se debe validar y completar el entorno local completo. El Docker Compose actual declara servicios que aún requieren archivos o implementaciones adicionales para funcionar completamente.
 
 ---
 
@@ -302,7 +312,7 @@ pnpm --filter @nyuro/web build
 
 ## Roadmap resumido del MVP
 
-Roadmap inicial:
+Roadmap inicial previsto:
 
 ```txt
 M0 - Fundación del proyecto
@@ -322,24 +332,26 @@ El milestone actual de fundación busca ordenar el proyecto antes de construir f
 
 ---
 
-## Estado actual del proyecto
+## Principios importantes del proyecto
 
-Estado actual:
+Estos principios guiarán el desarrollo:
 
-- El repositorio ya está organizado como monorepo con `apps/*` y `packages/*`.
-- Existe una aplicación backend base en `apps/api`.
-- Existe una aplicación frontend base en `apps/web`.
-- Existe un paquete de base de datos en `packages/database`.
-- Existe configuración inicial para PostgreSQL y Redis mediante Docker Compose.
-- El modelo de datos actual todavía es inicial y será rediseñado para soportar multi-tenancy, organizaciones, áreas, auditoría, IA y soporte remoto.
-- El backend todavía está en etapa temprana y será reorganizado por módulos reales del producto.
-- La documentación se completará progresivamente mediante issues del milestone de fundación.
+1. **Tenant primero**: todo dato operativo importante debe estar asociado a un tenant.
+2. **No fuga entre tenants**: un usuario de un tenant no debe ver, modificar ni inferir datos de otro tenant.
+3. **Privacidad del tenant**: NYURO debe monitorear salud técnica del SaaS, no contenido privado de los tenants.
+4. **Monolito modular primero**: el MVP no debe empezar como microservicios completos.
+5. **IA como apoyo**: si la IA falla, el ticket debe seguir funcionando.
+6. **RustDesk como integración modular**: soporte remoto debe estar aislado y auditado, no mezclado directamente con el núcleo de tickets.
+7. **PostgreSQL como fuente de verdad**: Redis no reemplaza la persistencia principal.
+8. **Seguridad en backend**: no basta con ocultar botones en frontend; toda acción sensible debe validarse en backend.
+9. **Auditoría desde temprano**: acciones importantes deben dejar trazabilidad.
+10. **Simplicidad antes que sobreingeniería**: no implementar infraestructura compleja antes de necesitarla.
 
 ---
 
 ## Metodología de trabajo
 
-El equipo trabajará con el siguiente flujo:
+El equipo trabajará con este flujo:
 
 ```txt
 Milestone → Issue → Rama → Desarrollo → Pull Request → Revisión → Validación → Merge
@@ -369,13 +381,14 @@ La regla principal es no implementar fases completas en una sola tarea. Cada ava
 
 ## Notas para el equipo
 
-- No se debe trabajar directo sobre funcionalidades grandes sin issue.
-- No se debe mezclar lógica de tickets con detalles internos de IA o RustDesk.
-- No se debe guardar información sensible en logs técnicos.
-- No se debe asumir que NYURO puede ver datos privados del tenant.
-- No se deben implementar microservicios, Kubernetes o billing antes de validar el MVP.
-- RustDesk sí entra al MVP, pero como integración controlada, modular y auditada.
-- La IA sí entra al MVP, pero como apoyo inicial, no como dependencia crítica.
+- No asumir que una parte está lista solo porque aparece en la visión.
+- No trabajar funcionalidades grandes sin issue.
+- No mezclar lógica de tickets con detalles internos de IA o RustDesk.
+- No guardar información sensible en logs técnicos.
+- No asumir que NYURO puede ver datos privados del tenant.
+- No implementar microservicios, Kubernetes o billing antes de validar el MVP.
+- RustDesk entra al MVP, pero como integración controlada, modular y auditada.
+- La IA entra al MVP, pero como apoyo inicial, no como dependencia crítica.
 
 ---
 
