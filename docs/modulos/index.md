@@ -1,5 +1,7 @@
 # Módulos en NestJS
 
+> **Referencia general:** Este documento explica cómo funcionan los módulos en NestJS como framework. No describe los módulos actuales del proyecto NYURO Ticket. Para ver qué módulos existen en el proyecto, consultar `apps/api/src/modules/`.
+
 Un **módulo** es una clase decorada con `@Module()`. Este decorador proporciona los metadatos que NestJS utiliza para organizar la estructura de la aplicación y resolver el grafo de dependencias.
 
 Cada aplicación tiene al menos un módulo: el **módulo raíz** (`AppModule`). Es el punto de partida que NestJS usa para construir el árbol de la aplicación y descubrir las relaciones entre proveedores y controladores.

@@ -131,10 +131,13 @@ Lo que existe actualmente:
 
 - Monorepo con `pnpm` y `turbo`.
 - Workspace configurado para `apps/*` y `packages/*`.
-- Aplicación backend base en `apps/api` con NestJS.
-- Aplicación frontend base en `apps/web` con Next.js.
+- Aplicación backend base en `apps/api` con NestJS. El módulo `auth` fue generado por CLI y es scaffold CRUD sin lógica real de autenticación.
+- Aplicación frontend base en `apps/web` con Next.js (scaffold mínimo).
+- Servicio auxiliar `apps/ai-service` en FastAPI como skeleton mínimo: tiene un endpoint de health y un stub de IA con TODO. No es funcional todavía.
 - Paquete de base de datos en `packages/database` con Prisma.
-- Modelo Prisma inicial con `User`, `Ticket` y enums básicos.
+- Modelo Prisma inicial con `User`, `Ticket` y enums básicos. Aún sin `tenantId`, `Tenant`, `Organization` ni `OrgUnit`.
+- Paquetes compartidos en estado scaffold: `packages/config`, `packages/types`, `packages/ui` y `packages/validators`.
+- Módulos NestJS placeholder en `apps/api/src/modules/` (`identity`, `tickets`, `ai-contingency`, `sla`). Todos están vacíos y sin registrar en `AppModule`. Son placeholders para issues futuras, no funcionalidad activa.
 - `docker-compose.yml` con servicios declarados para PostgreSQL, Redis, API y AI service.
 - Scripts raíz para `build`, `dev`, `test`, `lint`, `format` y comandos de base de datos.
 
@@ -142,14 +145,14 @@ Lo que todavía no está implementado:
 
 - Multi-tenancy real.
 - Modelo de tenant, organización, dominios y áreas tipo árbol.
-- Autenticación real.
+- `tenantId` en entidades principales (se agregará al inicio de M1).
+- Autenticación real (JWT, login, registro).
 - Roles y permisos reales.
 - Tickets funcionales conectados al modelo final.
 - Auditoría.
-- IA de contingencia funcional.
-- Servicio `apps/ai-service` implementado.
-- Servicio o módulo real de RustDesk.
-- Dockerfiles necesarios para algunos servicios declarados en Docker Compose.
+- IA de contingencia funcional (el skeleton existe, pero sin lógica de IA real).
+- Módulo o servicio real de soporte remoto con RustDesk.
+- Dockerfiles para `apps/api` y `apps/ai-service` (referenciados en Docker Compose pero aún no creados).
 - Dashboard.
 - Billing.
 - Kubernetes.
@@ -173,7 +176,7 @@ Actualmente el repositorio ya usa o declara:
 
 Previsto para el MVP:
 
-- **Python/FastAPI** para IA de contingencia.
+- **Python/FastAPI** en `apps/ai-service` (skeleton inicial disponible, sin funcionalidad real todavía).
 - **RustDesk** como integración de soporte remoto.
 - Módulos internos para multi-tenancy, organizaciones, áreas, usuarios, permisos, tickets, auditoría, IA y soporte remoto.
 
@@ -187,11 +190,16 @@ Estructura base actual:
 
 ```txt
 apps/
-  api/       # Backend base en NestJS
-  web/       # Frontend base en Next.js
+  api/         # Backend NestJS (scaffold base)
+  web/         # Frontend Next.js (scaffold mínimo)
+  ai-service/  # Servicio FastAPI (skeleton mínimo, no funcional)
 
 packages/
-  database/  # Prisma y paquete de base de datos
+  database/    # Prisma y paquete de base de datos
+  config/      # Configuración compartida (scaffold)
+  types/       # Tipos compartidos (scaffold)
+  ui/          # Componentes UI compartidos (scaffold)
+  validators/  # Validadores compartidos (scaffold)
 ```
 
 La estructura modular completa todavía se definirá y ajustará en issues posteriores del milestone de fundación.
