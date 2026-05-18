@@ -455,6 +455,78 @@ gRPC puede evaluarse en el futuro si se extraen servicios reales y existe una ra
 
 ---
 
+# Por qué no microservicios todavía
+
+Los microservicios completos no son adecuados para esta etapa por varias razones concretas:
+
+- El dominio del producto todavía está siendo definido. Partir módulos en servicios independientes antes de entender bien sus límites reales suele resultar en una arquitectura difícil de cambiar.
+- Los microservicios multiplican la complejidad operacional: necesitan service discovery, comunicación entre servicios, trazabilidad distribuida, despliegue independiente por servicio y manejo de consistencia eventual.
+- El equipo y el producto todavía no necesitan escalar partes de forma independiente. No tiene sentido pagar ese costo antes de necesitarlo.
+- Un monolito modular bien separado por dominios es más fácil de razonar, depurar y mantener en esta etapa.
+
+La apuesta es empezar con un monolito modular con límites claros entre módulos. Si en el futuro hay razones técnicas reales para extraer servicios (escala, equipos independientes, necesidades de despliegue separado), la modularidad interna habrá hecho ese trabajo más fácil, no más difícil.
+
+---
+
+# Por qué no gRPC interno todavía
+
+gRPC aporta valor real cuando hay comunicación frecuente entre servicios independientes con contratos estrictos y alto volumen. En el MVP no tenemos ese escenario todavía.
+
+Agregar gRPC en esta etapa significaría:
+
+- definir y mantener archivos `.proto` para comunicación entre módulos que están en el mismo proceso,
+- agregar complejidad de serialización donde una llamada directa a función o a servicio local es suficiente,
+- añadir una capa de infraestructura antes de que exista la necesidad real.
+
+Durante el MVP, los módulos del backend se comunican dentro del mismo proceso NestJS mediante inyección de dependencias. Cuando la arquitectura justifique separar servicios reales con contratos de comunicación, gRPC puede evaluarse en ese momento.
+
+---
+
+# Por qué no Kubernetes todavía
+
+Kubernetes es la respuesta correcta a problemas de orquestación a escala. No es la herramienta correcta para arrancar un producto que todavía no tiene usuarios ni carga real.
+
+El costo de Kubernetes en esta etapa es:
+
+- configuración compleja de despliegue antes de tener algo funcional que desplegar,
+- overhead de mantenimiento de manifiestos, ingress, secrets, namespaces y recursos de cluster,
+- necesidad de conocimientos de operaciones que distraen del desarrollo del producto,
+- costos de infraestructura injustificados para el nivel de carga actual.
+
+Para esta etapa, Docker Compose es suficiente para el entorno local y puede serlo también para un alpha inicial. Kubernetes se evaluará cuando el producto esté validado, haya carga real que justifique orquestación y existan razones técnicas concretas para adoptarlo.
+
+---
+
+# Estado actual: qué existe, qué es scaffold y qué no existe todavía
+
+Es importante no confundir la arquitectura objetivo con el estado actual del repositorio. Este cuadro aclara la situación real:
+
+| Componente | Estado | Descripción |
+|---|---|---|
+| `apps/api` | Scaffold | NestJS base generado por CLI. El módulo `auth` es scaffold CRUD sin lógica real. |
+| `apps/web` | Scaffold mínimo | Next.js base con una página de index, un componente y un hook. Sin UI final. |
+| `apps/ai-service` | Skeleton | FastAPI con health check y un stub de IA con `TODO`. Sin lógica funcional. |
+| `apps/remote-support-service/` | No existe | Parte de la arquitectura objetivo del MVP, pendiente de crear. |
+| `packages/database` | Scaffold inicial | Prisma con schema básico (`User`, `Ticket`, enums). Sin `Tenant`, `Organization`, `OrgUnit` ni `tenantId`. |
+| `packages/types` | Scaffold | Tipos básicos de `User` y `Ticket`. Sin tipos multi-tenant. |
+| `packages/validators` | Scaffold | Schemas básicos de validación. |
+| `packages/ui` | Scaffold | Componente `Button` inicial. |
+| `packages/config` | Scaffold | Configuración Tailwind base. |
+| `docker-compose.yml` | Parcial | PostgreSQL y Redis funcionan. API y AI service requieren Dockerfiles que todavía no existen. |
+| Módulos NestJS (`identity`, `tickets`, `ai-contingency`, `sla`) | Placeholders | Carpetas con archivos de módulo vacíos. No registrados en `AppModule`. |
+| Multi-tenancy | No implementado | El schema no tiene `Tenant`, `Organization`, `OrgUnit` ni `tenantId`. |
+| Auth real | No implementada | El módulo `auth` es scaffold CRUD generado por CLI. |
+| Integración RustDesk | No implementada | No hay módulo ni entidad `RemoteSupportSession`. |
+| IA funcional conectada al backend | No implementada | El skeleton existe, pero no hay conexión real entre backend y AI service. |
+| Dockerfiles de apps | No existen | `apps/api` y `apps/ai-service` no tienen Dockerfile todavía. |
+
+**Scaffold**: estructura base generada, sin lógica funcional real.
+**Skeleton**: estructura mínima funcional para health check o compilación, sin lógica de dominio.
+**Placeholder**: archivo o carpeta declarada para reservar el lugar en la arquitectura, sin contenido real.
+**No existe**: parte de la arquitectura objetivo que todavía no se ha creado.
+
+---
+
 # Seguridad y privacidad
 
 La seguridad debe considerarse desde el inicio.

@@ -206,6 +206,16 @@ La estructura modular completa todavía se definirá y ajustará en issues poste
 
 ---
 
+## Documentación
+
+Para profundizar más allá del README:
+
+- [Arquitectura general](docs/architecture/overview.md) — decisiones técnicas, módulos, por qué empezamos como monolito modular, estado actual vs arquitectura objetivo.
+- [Privacidad y seguridad operativa](docs/security/privacy-and-operations.md) — qué datos son privados del tenant, límites de NYURO como plataforma, reglas para IA, RustDesk, logs y auditoría.
+- [Entorno local de desarrollo](docs/development/local-environment.md) — guía completa para instalar, configurar y levantar el proyecto localmente.
+
+---
+
 ## Requisitos previos
 
 Para trabajar localmente se recomienda tener instalado:
@@ -214,6 +224,7 @@ Para trabajar localmente se recomienda tener instalado:
 - pnpm 9 o superior.
 - Docker y Docker Compose.
 - Git.
+- Python 3.11 o superior (opcional, solo si se quiere levantar `apps/ai-service` manualmente).
 
 ---
 
@@ -236,16 +247,15 @@ pnpm install
 
 ## Variables de entorno
 
-El proyecto todavía no tiene una guía final de variables de entorno.
+El archivo `.env.example` contiene las variables mínimas para el entorno local. Copiarlo a `.env` antes de levantar cualquier servicio:
 
-Como referencia inicial, el entorno local necesita variables para:
+```bash
+cp .env.example .env
+```
 
-- entorno de ejecución,
-- conexión a PostgreSQL,
-- conexión a Redis,
-- puerto de la API.
+Las variables cubren conexión a PostgreSQL, Redis, puerto de la API, JWT (declarado para auth pendiente) y configuración del servicio IA (declarado para fase siguiente).
 
-El archivo `.env.example` y la guía formal de entorno local se completarán en una issue específica del milestone de fundación.
+Para descripción detallada de cada variable y cómo usarlas, consultar [docs/development/local-environment.md](docs/development/local-environment.md).
 
 No se deben subir secretos reales al repositorio.
 
