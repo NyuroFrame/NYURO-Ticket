@@ -51,7 +51,7 @@ model OrganizationDomain {
   tenant       Tenant       @relation(fields: [tenantId], references: [id])
   organization Organization @relation(fields: [organizationId], references: [id])
 
-  @@unique([organizationId, domain])
+  @@unique([tenantId, domain])
   @@index([tenantId])
   @@index([organizationId])
   @@index([tenantId, organizationId])
