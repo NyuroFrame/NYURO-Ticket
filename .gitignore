@@ -60,3 +60,18 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# pnpm local store
+.pnpm-store/
+
+# Env files
+.env.*
+!.env.example
+
+# Build/type outputs
+*.tsbuildinfo
+coverage/
+**/coverage/
+
+# Caches
+.cache/
