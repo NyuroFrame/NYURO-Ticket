@@ -18,7 +18,7 @@ export class TenantsService {
       throw new BadRequestException('El nombre del tenant es requerido');
     }
 
-    const slug = rawSlug
+    const slug = rawSlug?.trim()
       ? this.normalizeSlug(rawSlug)
       : this.normalizeSlug(name);
 
@@ -31,9 +31,17 @@ export class TenantsService {
       throw new ConflictException(`Ya existe un tenant con el slug "${slug}"`);
     }
 
-    return this.prisma.tenant.create({
-      data: { name: name.trim(), slug },
-    });
+    try {
+      return await this.prisma.tenant.create({
+        data: { name: name.trim(), slug },
+      });
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new ConflictException(`Ya existe un tenant con el slug "${slug}"`);
+      }
+
+      throw error;
+    }
   }
 
   async findAll() {
@@ -52,6 +60,10 @@ export class TenantsService {
 
   async findBySlug(slug: string) {
     const normalized = this.normalizeSlug(slug);
+    if (!normalized) {
+      throw new BadRequestException('El slug del tenant es requerido');
+    }
+
     const tenant = await this.prisma.tenant.findUnique({
       where: { slug: normalized },
     });
@@ -66,9 +78,18 @@ export class TenantsService {
       .trim()
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .replace(/-{2,}/g, '-');
+      .replace(/-{2,}/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'P2002'
+    );
   }
 }
