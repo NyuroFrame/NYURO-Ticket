@@ -110,6 +110,7 @@ model Ticket {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
   AGENT
   REQUESTER
