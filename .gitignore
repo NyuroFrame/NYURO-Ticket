@@ -75,3 +75,7 @@ coverage/
 
 # Caches
 .cache/
+
+# SDD
+.agents
+.specify

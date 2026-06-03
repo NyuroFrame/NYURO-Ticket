@@ -7,10 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Multi-tenancy base (M1) ──────────────────────────────────────────────────
-
 model Tenant {
   id        String   @id @default(cuid())
+  code      String   @unique
   name      String
   slug      String   @unique
   isActive  Boolean  @default(true)
@@ -20,6 +19,7 @@ model Tenant {
   organizations Organization[]
   domains       OrganizationDomain[]
   orgUnits      OrgUnit[]
+  users         User[]
 }
 
 model Organization {
@@ -79,15 +79,16 @@ model OrgUnit {
   @@index([tenantId, organizationId])
 }
 
-// ─── Modelos iniciales (scaffold M0, sin multi-tenancy aún) ──────────────────
-
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
+  name      String   @unique
+  password  String
   role      UserRole @default(REQUESTER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
   assignedTickets Ticket[] @relation("AssignedTickets")
   createdTickets  Ticket[] @relation("CreatedTickets")
