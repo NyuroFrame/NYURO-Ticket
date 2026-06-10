@@ -3,13 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Tenant {
   id        String   @id @default(cuid())
-  code      String   @unique
   name      String
   slug      String   @unique
   isActive  Boolean  @default(true)
@@ -25,6 +24,7 @@ model Tenant {
 model Organization {
   id        String   @id @default(cuid())
   tenantId  String
+  code      String   @unique
   name      String
   slug      String
   isActive  Boolean  @default(true)
@@ -34,6 +34,7 @@ model Organization {
   tenant   Tenant               @relation(fields: [tenantId], references: [id])
   domains  OrganizationDomain[]
   orgUnits OrgUnit[]
+  users    User[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -80,15 +81,19 @@ model OrgUnit {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  password  String
-  role      UserRole @default(REQUESTER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  password           String
+  role               String   @default("REQUESTER")
+  mustResetPassword  Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
   assignedTickets Ticket[] @relation("AssignedTickets")
   createdTickets  Ticket[] @relation("CreatedTickets")
@@ -98,8 +103,8 @@ model Ticket {
   id          String         @id @default(cuid())
   title       String
   description String
-  status      TicketStatus   @default(OPEN)
-  priority    TicketPriority @default(MEDIUM)
+  status      String   @default("OPEN")
+  priority    String   @default("MEDIUM")
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -109,23 +114,3 @@ model Ticket {
   createdBy   User    @relation("CreatedTickets", fields: [createdById], references: [id])
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  AGENT
-  REQUESTER
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-enum TicketPriority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}

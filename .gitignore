@@ -76,6 +76,10 @@ coverage/
 # Caches
 .cache/
 
+# SQLite databases
+*.db
+*.db-journal
+
 # SDD
 .agents
 .specify
