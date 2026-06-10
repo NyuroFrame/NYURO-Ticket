@@ -1,9 +1,13 @@
 import { Controller, Post, Get, Body, Res, UseGuards, HttpCode } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { OrgRegisterDto } from './dto/org-register.dto';
+import { AdminLoginDto } from './dto/admin-login.dto';
+import { OrgLoginDto } from './dto/org-login.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 const COOKIE_OPTIONS = {
@@ -18,19 +22,30 @@ const COOKIE_OPTIONS = {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // Registro para AGENT y REQUESTER
   @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.register(dto);
+  async register(@Body() dto: OrgRegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.registerOrgUser(dto);
     res.cookie('token', result.token, COOKIE_OPTIONS);
-    return { user: result.user, tenant: result.tenant };
+    return { user: result.user, tenant: result.tenant, organization: result.organization };
   }
 
-  @Post('login')
+  // Login para SUPER_ADMIN, ADMIN y TENANT_OWNER
+  @Post('login/admin')
   @HttpCode(200)
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(dto);
+  async adminLogin(@Body() dto: AdminLoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.adminLogin(dto);
     res.cookie('token', result.token, COOKIE_OPTIONS);
-    return { user: result.user, tenant: result.tenant };
+    return { user: result.user, tenant: result.tenant, mustResetPassword: result.mustResetPassword };
+  }
+
+  // Login para AGENT y REQUESTER
+  @Post('login/org')
+  @HttpCode(200)
+  async orgLogin(@Body() dto: OrgLoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.orgLogin(dto);
+    res.cookie('token', result.token, COOKIE_OPTIONS);
+    return { user: result.user, tenant: result.tenant, organization: result.organization };
   }
 
   @Post('logout')
@@ -50,9 +65,37 @@ export class AuthController {
         name: profile.name,
         role: profile.role,
         tenantId: profile.tenantId,
+        organizationId: profile.organizationId,
+        mustResetPassword: profile.mustResetPassword,
         createdAt: profile.createdAt,
       },
       tenant: profile.tenant,
+      organization: profile.organization,
     };
+  }
+
+  @Post('reset-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async resetPassword(
+    @CurrentUser() user: any,
+    @Body('newPassword') newPassword: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.resetPassword(user.id, newPassword);
+    res.cookie('token', result.token, COOKIE_OPTIONS);
+    return {
+      user: result.user,
+      tenant: result.tenant,
+      organization: result.organization,
+    };
+  }
+
+  // Crear usuario por SUPER_ADMIN
+  @Post('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  async createUser(@Body() dto: CreateUserDto) {
+    return this.authService.createUserByAdmin(dto);
   }
 }
