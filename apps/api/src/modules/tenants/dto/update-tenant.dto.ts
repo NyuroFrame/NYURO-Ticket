@@ -1,8 +1,9 @@
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
-export class CreateTenantDto {
+export class UpdateTenantDto {
   @IsString()
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @IsString()
   @IsOptional()

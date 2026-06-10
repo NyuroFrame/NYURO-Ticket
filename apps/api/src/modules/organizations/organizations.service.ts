@@ -17,7 +17,7 @@ export class OrganizationsService {
 
   async create(tenantId: string, createOrganizationDto: CreateOrganizationDto) {
     const normalizedTenantId = this.validateTenantId(tenantId);
-    const { name, slug: rawSlug } = createOrganizationDto;
+    const { name, slug: rawSlug, code: rawCode } = createOrganizationDto;
 
     if (!name || !name.trim()) {
       throw new BadRequestException('El nombre de la organizacion es requerido');
@@ -30,6 +30,9 @@ export class OrganizationsService {
     if (!slug) {
       throw new BadRequestException('El slug generado no es valido');
     }
+
+    // Generar code automáticamente si no se proporciona
+    const code = rawCode?.trim() || this.generateCode(slug);
 
     await this.tenantsService.findOne(normalizedTenantId);
 
@@ -49,12 +52,13 @@ export class OrganizationsService {
           tenantId: normalizedTenantId,
           name: name.trim(),
           slug,
+          code,
         },
       });
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
         throw new ConflictException(
-          `Ya existe una organizacion con el slug "${slug}" en este tenant`,
+          `Ya existe una organizacion con el slug "${slug}" o code "${code}" en este tenant`,
         );
       }
 
@@ -104,6 +108,11 @@ export class OrganizationsService {
     }
 
     return id.trim();
+  }
+
+  private generateCode(slug: string): string {
+    const random = Math.random().toString(36).substring(2, 6);
+    return `${slug}-${random}`;
   }
 
   private normalizeSlug(value: string): string {
