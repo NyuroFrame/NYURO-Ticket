@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/auth-context';
 function HomeContent() {
   const { user, tenant, organization, logout } = useAuth();
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const isAccountAdmin = user?.role === 'ACCOUNT_ADMIN';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -18,6 +19,14 @@ function HomeContent() {
                 className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
               >
                 Panel Admin
+              </Link>
+            )}
+            {isAccountAdmin && (
+              <Link
+                href="/tenant/dashboard"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                Panel Tenant
               </Link>
             )}
             <span className="text-sm text-gray-500">

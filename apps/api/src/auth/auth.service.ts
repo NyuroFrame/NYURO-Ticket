@@ -47,7 +47,7 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  // Login para SUPER_ADMIN, ADMIN y TENANT_OWNER (solo name + password)
+  // Login para SUPER_ADMIN, ACCOUNT_ADMIN y ORG_ADMIN (solo name + password)
   async adminLogin(dto: AdminLoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { name: dto.name },
@@ -58,8 +58,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Solo SUPER_ADMIN, ADMIN y TENANT_OWNER pueden usar este login
-    if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'TENANT_OWNER') {
+    // Solo SUPER_ADMIN, ACCOUNT_ADMIN y ORG_ADMIN pueden usar este login
+    if (user.role !== 'SUPER_ADMIN' && user.role !== 'ACCOUNT_ADMIN' && user.role !== 'ORG_ADMIN') {
       throw new UnauthorizedException('Use the organization login instead');
     }
 

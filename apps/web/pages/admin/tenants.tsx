@@ -302,7 +302,7 @@ function TenantsAdminContent() {
                       placeholder="Ej: juan.perez@acme.com"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Este será el usuario con rol TENANT_OWNER para gestionar el tenant.
+                      Este será el usuario con rol ACCOUNT_ADMIN para gestionar el tenant.
                     </p>
                   </div>
                 )}

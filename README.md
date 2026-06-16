@@ -49,7 +49,7 @@ El flujo general que se quiere construir es el siguiente:
 4. Los usuarios podrán iniciar sesión con correos válidos según los dominios configurados.
 5. El tenant configura sus áreas o unidades organizacionales en forma de árbol.
 6. Los usuarios se asignan a organizaciones y áreas según corresponda.
-7. Se definen roles como **administradores de plataforma**, **dueños de tenant**, **administradores de organización**, **agentes de soporte** y **usuarios solicitantes**.
+7. Se definen roles como **administradores de plataforma**, **administradores de cuenta**, **administradores de organización**, **agentes de soporte** y **usuarios solicitantes**.
 8. Los usuarios finales crean tickets según sus necesidades.
 9. La IA de contingencia puede apoyar con preguntas iniciales, clasificación, sugerencias o resumen del caso.
 10. Si el problema requiere atención humana, un supervisor o el sistema asigna el ticket a un agente.
@@ -72,7 +72,7 @@ El MVP esperado incluirá:
 - Configuración de dominios corporativos permitidos.
 - Estructura de áreas o unidades organizacionales tipo árbol.
 - Usuarios asociados a organizaciones y áreas.
-- Roles y permisos básicos (SUPER_ADMIN, TENANT_OWNER, ADMIN, AGENT, REQUESTER).
+- Roles y permisos básicos (SUPER_ADMIN, ACCOUNT_ADMIN, ORG_ADMIN, AGENT, REQUESTER).
 - Sistema de tickets funcional.
 - Mensajes o comentarios dentro de tickets.
 - Asignación de tickets a agentes.
@@ -137,8 +137,8 @@ Lo que existe actualmente:
 - Paquete de base de datos en `packages/database` con Prisma y SQLite.
 - Modelo Prisma con `User`, `Tenant`, `Organization`, `OrgUnit`, `OrganizationDomain` y `Ticket`.
 - Autenticación real con JWT, login dual (admin/org), registro y restablecimiento de contraseña.
-- Roles implementados: `SUPER_ADMIN`, `TENANT_OWNER`, `ADMIN`, `AGENT`, `REQUESTER`.
-- Panel de administración de tenants para `SUPER_ADMIN` con creación de tenant + owner.
+- Roles implementados: `SUPER_ADMIN`, `ACCOUNT_ADMIN`, `ORG_ADMIN`, `AGENT`, `REQUESTER`.
+- Panel de administración de tenants para `SUPER_ADMIN` con creación de tenant + account admin.
 - Paquetes compartidos: `packages/config`, `packages/types`, `packages/ui` y `packages/validators`.
 - `docker-compose.yml` con servicios declarados para PostgreSQL, Redis, API y AI service.
 - Scripts raíz para `build`, `dev`, `test`, `lint`, `format` y comandos de base de datos.
@@ -333,18 +333,18 @@ El sistema define cinco roles principales, cada uno con un alcance y responsabil
 | Rol | Alcance | Descripción |
 |-----|---------|-------------|
 | **SUPER_ADMIN** | Plataforma | Operador de NYURO. Puede crear tenants, gestionar la plataforma y acceder al panel de administración global. |
-| **TENANT_OWNER** | Tenant | Dueño del contrato. Es la persona que contrató el servicio. Puede gestionar organizaciones, usuarios, áreas y tickets dentro de su tenant. |
-| **ADMIN** | Organización | Administrador dentro de una organización del tenant. Puede gestionar usuarios, tickets y configuraciones de esa organización. |
+| **ACCOUNT_ADMIN** | Tenant | Administrador de la cuenta. Es la persona que contrató el servicio. Puede gestionar organizaciones, usuarios, áreas y tickets dentro de su tenant. |
+| **ORG_ADMIN** | Organización | Administrador dentro de una organización del tenant. Puede gestionar usuarios, tickets y configuraciones de esa organización. |
 | **AGENT** | Organización | Soporte técnico que atiende tickets asignados. |
 | **REQUESTER** | Organización | Usuario final que crea tickets y solicita soporte. |
 
 ### Flujo de creación de un tenant
 
 1. Un `SUPER_ADMIN` crea un tenant desde el panel de administración (`/admin/tenants`).
-2. Al crear el tenant, se genera automáticamente un usuario `TENANT_OWNER` con una contraseña temporal.
+2. Al crear el tenant, se genera automáticamente un usuario `ACCOUNT_ADMIN` con una contraseña temporal.
 3. El `SUPER_ADMIN` comparte las credenciales con el cliente.
-4. El `TENANT_OWNER` inicia sesión y debe cambiar su contraseña obligatoriamente antes de continuar.
-5. Una vez dentro, el `TENANT_OWNER` puede crear organizaciones, áreas, usuarios y gestionar tickets.
+4. El `ACCOUNT_ADMIN` inicia sesión y debe cambiar su contraseña obligatoriamente antes de continuar.
+5. Una vez dentro, el `ACCOUNT_ADMIN` puede crear organizaciones, áreas, usuarios y gestionar tickets.
 
 ---
 

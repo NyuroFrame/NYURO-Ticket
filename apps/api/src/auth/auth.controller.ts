@@ -30,7 +30,7 @@ export class AuthController {
     return { user: result.user, tenant: result.tenant, organization: result.organization };
   }
 
-  // Login para SUPER_ADMIN, ADMIN y TENANT_OWNER
+  // Login para SUPER_ADMIN, ACCOUNT_ADMIN y ORG_ADMIN
   @Post('login/admin')
   @HttpCode(200)
   async adminLogin(@Body() dto: AdminLoginDto, @Res({ passthrough: true }) res: Response) {

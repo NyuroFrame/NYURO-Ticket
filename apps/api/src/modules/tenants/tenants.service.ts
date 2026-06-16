@@ -194,7 +194,7 @@ export class TenantsService {
           data: {
             name: ownerName.trim(),
             password: hashedPassword,
-            role: 'TENANT_OWNER',
+            role: 'ACCOUNT_ADMIN',
             tenantId: tenant.id,
             mustResetPassword: true,
           },

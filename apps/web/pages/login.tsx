@@ -60,7 +60,7 @@ export default function LoginPage() {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Administrador
+              Cuenta Admin
             </button>
           </div>
 
@@ -114,7 +114,7 @@ export default function LoginPage() {
               type="submit"
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
-              {mode === 'admin' ? 'Iniciar sesión como Admin' : 'Iniciar sesión'}
+              {mode === 'admin' ? 'Iniciar sesión como Cuenta Admin' : 'Iniciar sesión'}
             </button>
           </form>
           
