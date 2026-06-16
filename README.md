@@ -49,7 +49,7 @@ El flujo general que se quiere construir es el siguiente:
 4. Los usuarios podrán iniciar sesión con correos válidos según los dominios configurados.
 5. El tenant configura sus áreas o unidades organizacionales en forma de árbol.
 6. Los usuarios se asignan a organizaciones y áreas según corresponda.
-7. Se definen roles como administradores, supervisores, agentes de soporte y usuarios solicitantes.
+7. Se definen roles como **administradores de plataforma**, **dueños de tenant**, **administradores de organización**, **agentes de soporte** y **usuarios solicitantes**.
 8. Los usuarios finales crean tickets según sus necesidades.
 9. La IA de contingencia puede apoyar con preguntas iniciales, clasificación, sugerencias o resumen del caso.
 10. Si el problema requiere atención humana, un supervisor o el sistema asigna el ticket a un agente.
@@ -72,7 +72,7 @@ El MVP esperado incluirá:
 - Configuración de dominios corporativos permitidos.
 - Estructura de áreas o unidades organizacionales tipo árbol.
 - Usuarios asociados a organizaciones y áreas.
-- Roles y permisos básicos.
+- Roles y permisos básicos (SUPER_ADMIN, TENANT_OWNER, ADMIN, AGENT, REQUESTER).
 - Sistema de tickets funcional.
 - Mensajes o comentarios dentro de tickets.
 - Asignación de tickets a agentes.
@@ -125,29 +125,26 @@ Los planes comerciales se definirán después de validar el MVP con pruebas real
 
 ## Estado actual real del repositorio
 
-Actualmente el repositorio se encuentra en etapa inicial de fundación.
+Actualmente el repositorio se encuentra en etapa de fundación.
 
 Lo que existe actualmente:
 
 - Monorepo con `pnpm` y `turbo`.
 - Workspace configurado para `apps/*` y `packages/*`.
-- Aplicación backend base en `apps/api` con NestJS. El módulo `auth` fue generado por CLI y es scaffold CRUD sin lógica real de autenticación.
-- Aplicación frontend base en `apps/web` con Next.js (scaffold mínimo).
+- Aplicación backend base en `apps/api` con NestJS. El módulo `auth` tiene lógica real de autenticación con JWT, roles y guards.
+- Aplicación frontend base en `apps/web` con Next.js. Incluye pantallas de login, registro, panel de admin para tenants y flujo de restablecimiento de contraseña.
 - Servicio auxiliar `apps/ai-service` en FastAPI como skeleton mínimo: tiene un endpoint de health y un stub de IA con TODO. No es funcional todavía.
-- Paquete de base de datos en `packages/database` con Prisma.
-- Modelo Prisma inicial con `User`, `Ticket` y enums básicos. Aún sin `tenantId`, `Tenant`, `Organization` ni `OrgUnit`.
-- Paquetes compartidos en estado scaffold: `packages/config`, `packages/types`, `packages/ui` y `packages/validators`.
-- Módulos NestJS placeholder en `apps/api/src/modules/` (`identity`, `tickets`, `ai-contingency`, `sla`). Todos están vacíos y sin registrar en `AppModule`. Son placeholders para issues futuras, no funcionalidad activa.
+- Paquete de base de datos en `packages/database` con Prisma y SQLite.
+- Modelo Prisma con `User`, `Tenant`, `Organization`, `OrgUnit`, `OrganizationDomain` y `Ticket`.
+- Autenticación real con JWT, login dual (admin/org), registro y restablecimiento de contraseña.
+- Roles implementados: `SUPER_ADMIN`, `TENANT_OWNER`, `ADMIN`, `AGENT`, `REQUESTER`.
+- Panel de administración de tenants para `SUPER_ADMIN` con creación de tenant + owner.
+- Paquetes compartidos: `packages/config`, `packages/types`, `packages/ui` y `packages/validators`.
 - `docker-compose.yml` con servicios declarados para PostgreSQL, Redis, API y AI service.
 - Scripts raíz para `build`, `dev`, `test`, `lint`, `format` y comandos de base de datos.
 
 Lo que todavía no está implementado:
 
-- Multi-tenancy real.
-- Modelo de tenant, organización, dominios y áreas tipo árbol.
-- `tenantId` en entidades principales (se agregará al inicio de M1).
-- Autenticación real (JWT, login, registro).
-- Roles y permisos reales.
 - Tickets funcionales conectados al modelo final.
 - Auditoría.
 - IA de contingencia funcional (el skeleton existe, pero sin lógica de IA real).
@@ -170,6 +167,7 @@ Actualmente el repositorio ya usa o declara:
 - **NestJS** en `apps/api`.
 - **Next.js** en `apps/web`.
 - **PostgreSQL** como base de datos prevista.
+- **SQLite** para desarrollo local.
 - **Prisma** en `packages/database`.
 - **Redis** declarado en Docker Compose para uso futuro.
 - **Docker Compose** como base de entorno local.
@@ -325,6 +323,28 @@ pnpm --filter @nyuro/api test
 pnpm --filter @nyuro/web dev
 pnpm --filter @nyuro/web build
 ```
+
+---
+
+## Roles y permisos
+
+El sistema define cinco roles principales, cada uno con un alcance y responsabilidad diferente:
+
+| Rol | Alcance | Descripción |
+|-----|---------|-------------|
+| **SUPER_ADMIN** | Plataforma | Operador de NYURO. Puede crear tenants, gestionar la plataforma y acceder al panel de administración global. |
+| **TENANT_OWNER** | Tenant | Dueño del contrato. Es la persona que contrató el servicio. Puede gestionar organizaciones, usuarios, áreas y tickets dentro de su tenant. |
+| **ADMIN** | Organización | Administrador dentro de una organización del tenant. Puede gestionar usuarios, tickets y configuraciones de esa organización. |
+| **AGENT** | Organización | Soporte técnico que atiende tickets asignados. |
+| **REQUESTER** | Organización | Usuario final que crea tickets y solicita soporte. |
+
+### Flujo de creación de un tenant
+
+1. Un `SUPER_ADMIN` crea un tenant desde el panel de administración (`/admin/tenants`).
+2. Al crear el tenant, se genera automáticamente un usuario `TENANT_OWNER` con una contraseña temporal.
+3. El `SUPER_ADMIN` comparte las credenciales con el cliente.
+4. El `TENANT_OWNER` inicia sesión y debe cambiar su contraseña obligatoriamente antes de continuar.
+5. Una vez dentro, el `TENANT_OWNER` puede crear organizaciones, áreas, usuarios y gestionar tickets.
 
 ---
 
