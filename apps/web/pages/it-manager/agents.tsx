@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ItManagerRoute } from '../../components/ItManagerRoute';
 import { useAuth } from '../../contexts/auth-context';
 import { useUsers } from '../../hooks/useUsers';
+import { PasswordInput } from '../../components/PasswordInput';
 
 function AgentsContent() {
   const { user, logout } = useAuth();
@@ -128,16 +129,13 @@ function AgentsContent() {
                   placeholder="Ej: juan.perez"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Mínimo 6 caracteres"
-                />
-              </div>
+              <PasswordInput
+                label="Contraseña *"
+                id="agentPassword"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Mínimo 6 caracteres"
+              />
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
