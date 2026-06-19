@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
 
 export class OrgRegisterDto {
   @IsString()
@@ -14,4 +14,8 @@ export class OrgRegisterDto {
   @IsString()
   @MinLength(1)
   orgCode: string;
+
+  @IsString()
+  @IsOptional()
+  orgUnitId?: string;
 }

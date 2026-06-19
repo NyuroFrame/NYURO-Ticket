@@ -6,6 +6,7 @@ import { OrganizationDomainsModule } from './modules/organizations/organization-
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { OrgUnitsModule } from './modules/org-units/org-units.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     OrganizationsModule,
     OrganizationDomainsModule,
     OrgUnitsModule,
+    TicketsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

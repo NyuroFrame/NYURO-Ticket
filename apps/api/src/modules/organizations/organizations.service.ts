@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { TenantsService } from '../tenants/tenants.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
+import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
 @Injectable()
 export class OrganizationsService {
@@ -92,6 +93,117 @@ export class OrganizationsService {
     }
 
     return organization;
+  }
+
+  async update(tenantId: string, id: string, dto: UpdateOrganizationDto) {
+    const normalizedTenantId = this.validateTenantId(tenantId);
+    const normalizedId = this.validateOrganizationId(id);
+    await this.tenantsService.findOne(normalizedTenantId);
+
+    const existing = await this.prisma.organization.findFirst({
+      where: { id: normalizedId, tenantId: normalizedTenantId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(
+        `Organizacion con id "${normalizedId}" no encontrada en este tenant`,
+      );
+    }
+
+    const data: {
+      name?: string;
+      slug?: string;
+      code?: string;
+      isActive?: boolean;
+    } = {};
+
+    if (dto.name !== undefined) {
+      const trimmed = dto.name.trim();
+      if (!trimmed) {
+        throw new BadRequestException('El nombre de la organizacion es requerido');
+      }
+      data.name = trimmed;
+    }
+
+    if (dto.slug !== undefined) {
+      const slug = this.normalizeSlug(dto.slug);
+      if (!slug) {
+        throw new BadRequestException('El slug no es valido');
+      }
+      if (slug !== existing.slug) {
+        const duplicate = await this.prisma.organization.findFirst({
+          where: { tenantId: normalizedTenantId, slug },
+        });
+        if (duplicate) {
+          throw new ConflictException(
+            `Ya existe una organizacion con el slug "${slug}" en este tenant`,
+          );
+        }
+      }
+      data.slug = slug;
+    }
+
+    if (dto.code !== undefined) {
+      const code = dto.code.trim();
+      if (!code) {
+        throw new BadRequestException('El codigo de la organizacion es requerido');
+      }
+      if (code !== existing.code) {
+        const duplicate = await this.prisma.organization.findFirst({
+          where: { tenantId: normalizedTenantId, code },
+        });
+        if (duplicate) {
+          throw new ConflictException(
+            `Ya existe una organizacion con el codigo "${code}" en este tenant`,
+          );
+        }
+      }
+      data.code = code;
+    }
+
+    if (dto.isActive !== undefined) {
+      data.isActive = dto.isActive;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return existing;
+    }
+
+    try {
+      return await this.prisma.organization.update({
+        where: { id: normalizedId },
+        data,
+      });
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new ConflictException(
+          `Ya existe una organizacion con el slug "${data.slug ?? existing.slug}" o code "${data.code ?? existing.code}" en este tenant`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async remove(tenantId: string, id: string) {
+    const normalizedTenantId = this.validateTenantId(tenantId);
+    const normalizedId = this.validateOrganizationId(id);
+    await this.tenantsService.findOne(normalizedTenantId);
+
+    const existing = await this.prisma.organization.findFirst({
+      where: { id: normalizedId, tenantId: normalizedTenantId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(
+        `Organizacion con id "${normalizedId}" no encontrada en este tenant`,
+      );
+    }
+
+    await this.prisma.organization.delete({
+      where: { id: normalizedId },
+    });
+
+    return { message: 'Organizacion eliminada exitosamente' };
   }
 
   private validateTenantId(tenantId: string): string {

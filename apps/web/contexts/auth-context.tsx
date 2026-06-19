@@ -10,6 +10,7 @@ interface User {
   role: string;
   tenantId: string | null;
   organizationId: string | null;
+  orgUnitId: string | null;
   mustResetPassword: boolean;
 }
 
@@ -25,17 +26,23 @@ interface Organization {
   name: string;
 }
 
+interface OrgUnit {
+  id: string;
+  name: string;
+}
+
 interface AuthState {
   user: User | null;
   tenant: Tenant | null;
   organization: Organization | null;
+  orgUnit: OrgUnit | null;
   loading: boolean;
 }
 
 interface AuthContextType extends AuthState {
   adminLogin: (name: string, password: string) => Promise<string | null>;
   orgLogin: (orgCode: string, name: string, password: string) => Promise<string | null>;
-  register: (name: string, password: string, orgCode: string) => Promise<string | null>;
+  register: (name: string, password: string, orgCode: string, orgUnitId?: string) => Promise<string | null>;
   resetPassword: (newPassword: string) => Promise<string | null>;
   logout: () => Promise<void>;
 }
@@ -48,16 +55,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null, 
     tenant: null, 
     organization: null,
+    orgUnit: null,
     loading: true 
   });
 
   const checkAuth = useCallback(async () => {
-    const res = await api.get<{ user: User; tenant: Tenant; organization: Organization }>('/auth/me');
+    const res = await api.get<{ user: User; tenant: Tenant; organization: Organization; orgUnit: OrgUnit }>('/auth/me');
     if (res.data) {
       setState({ 
         user: res.data.user, 
         tenant: res.data.tenant, 
         organization: res.data.organization,
+        orgUnit: res.data.orgUnit,
         loading: false 
       });
       // Si el usuario debe restablecer contraseña, redirigir
@@ -65,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.replace('/reset-password');
       }
     } else {
-      setState({ user: null, tenant: null, organization: null, loading: false });
+      setState({ user: null, tenant: null, organization: null, orgUnit: null, loading: false });
     }
   }, [router]);
 
@@ -76,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const adminLogin = useCallback(async (name: string, password: string): Promise<string | null> => {
     const res = await api.post<{ user: User; tenant: Tenant; mustResetPassword: boolean }>('/auth/login/admin', { name, password });
     if (res.data) {
-      setState({ user: res.data.user, tenant: res.data.tenant, organization: null, loading: false });
+      setState({ user: res.data.user, tenant: res.data.tenant, organization: null, orgUnit: null, loading: false });
       // Si debe restablecer contraseña, redirigir
       if (res.data.mustResetPassword || res.data.user.mustResetPassword) {
         router.replace('/reset-password');
@@ -87,12 +96,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const orgLogin = useCallback(async (orgCode: string, name: string, password: string): Promise<string | null> => {
-    const res = await api.post<{ user: User; tenant: Tenant; organization: Organization }>('/auth/login/org', { orgCode, name, password });
+    const res = await api.post<{ user: User; tenant: Tenant; organization: Organization; orgUnit: OrgUnit }>('/auth/login/org', { orgCode, name, password });
     if (res.data) {
       setState({ 
         user: res.data.user, 
         tenant: res.data.tenant, 
         organization: res.data.organization,
+        orgUnit: res.data.orgUnit,
         loading: false 
       });
       if (res.data.user.mustResetPassword && router.pathname !== '/reset-password') {
@@ -103,13 +113,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.error ?? 'Login failed';
   }, [router]);
 
-  const register = useCallback(async (name: string, password: string, orgCode: string): Promise<string | null> => {
-    const res = await api.post<{ user: User; tenant: Tenant; organization: Organization }>('/auth/register', { name, password, orgCode });
+  const register = useCallback(async (name: string, password: string, orgCode: string, orgUnitId?: string): Promise<string | null> => {
+    const res = await api.post<{ user: User; tenant: Tenant; organization: Organization; orgUnit: OrgUnit }>('/auth/register', { name, password, orgCode, orgUnitId });
     if (res.data) {
       setState({ 
         user: res.data.user, 
         tenant: res.data.tenant, 
         organization: res.data.organization,
+        orgUnit: res.data.orgUnit,
         loading: false 
       });
       if (res.data.user.mustResetPassword && router.pathname !== '/reset-password') {
@@ -121,12 +132,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const resetPassword = useCallback(async (newPassword: string): Promise<string | null> => {
-    const res = await api.post<{ user: User; tenant: Tenant; organization: Organization }>('/auth/reset-password', { newPassword });
+    const res = await api.post<{ user: User; tenant: Tenant; organization: Organization; orgUnit: OrgUnit }>('/auth/reset-password', { newPassword });
     if (res.data) {
       setState({ 
         user: res.data.user, 
         tenant: res.data.tenant, 
         organization: res.data.organization,
+        orgUnit: res.data.orgUnit,
         loading: false 
       });
       return null;
@@ -136,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.post('/auth/logout', {});
-    setState({ user: null, tenant: null, organization: null, loading: false });
+    setState({ user: null, tenant: null, organization: null, orgUnit: null, loading: false });
   }, []);
 
   return (

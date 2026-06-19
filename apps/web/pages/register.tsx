@@ -1,17 +1,29 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../contexts/auth-context';
+import { useOrgUnits } from '../hooks/useOrgUnits';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [orgCode, setOrgCode] = useState('');
+  const [orgUnitId, setOrgUnitId] = useState('');
   const [error, setError] = useState('');
   const { register } = useAuth();
+  const { orgUnits, loading: loadingOrgUnits, error: orgUnitsError, fetchOrgUnitsByOrgCode } = useOrgUnits();
   const router = useRouter();
+
+  useEffect(() => {
+    if (orgCode.trim().length >= 3) {
+      const timeout = setTimeout(() => {
+        fetchOrgUnitsByOrgCode(orgCode.trim());
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [orgCode, fetchOrgUnitsByOrgCode]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -21,8 +33,12 @@ export default function RegisterPage() {
       setError('El código de organización es requerido');
       return;
     }
+    if (!orgUnitId) {
+      setError('Selecciona un área');
+      return;
+    }
 
-    const err = await register(name, password, orgCode);
+    const err = await register(name, password, orgCode, orgUnitId);
     if (err) setError(err);
     else router.replace('/');
   }
@@ -75,6 +91,26 @@ export default function RegisterPage() {
                 placeholder="Ej: acme-corp"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+            <div>
+              <label htmlFor="orgUnit" className="block text-sm font-medium text-gray-700 mb-1">
+                Área / Departamento
+              </label>
+              <select
+                id="orgUnit"
+                value={orgUnitId}
+                onChange={(e) => setOrgUnitId(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">{loadingOrgUnits ? 'Cargando áreas...' : 'Selecciona un área'}</option>
+                {orgUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>{unit.name}</option>
+                ))}
+              </select>
+              {orgUnitsError && (
+                <p className="text-xs text-red-600 mt-1">{orgUnitsError}</p>
+              )}
             </div>
             {error && (
               <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>

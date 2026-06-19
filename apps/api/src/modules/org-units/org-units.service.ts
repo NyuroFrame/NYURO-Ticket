@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { OrganizationsService } from '../organizations/organizations.service';
 import { CreateOrgUnitDto } from './dto/create-org-unit.dto';
+import { UpdateOrgUnitDto } from './dto/update-org-unit.dto';
 
 @Injectable()
 export class OrgUnitsService {
@@ -27,14 +28,6 @@ export class OrgUnitsService {
 
     if (!name || !name.trim()) {
       throw new BadRequestException('El nombre de la unidad es requerido');
-    }
-
-    const slug = createOrgUnitDto?.slug?.trim()
-      ? this.normalizeSlug(createOrgUnitDto.slug)
-      : this.normalizeSlug(name);
-
-    if (!slug) {
-      throw new BadRequestException('El slug generado no es valido');
     }
 
     const normalizedParentId = this.validateOptionalParentId(
@@ -67,13 +60,13 @@ export class OrgUnitsService {
         tenantId: normalizedTenantId,
         organizationId: normalizedOrganizationId,
         parentId: normalizedParentId ?? null,
-        slug,
+        name: name.trim(),
       },
     });
 
     if (existing) {
       throw new ConflictException(
-        `Ya existe una unidad con el slug "${slug}" bajo el mismo padre`,
+        `Ya existe una unidad con el nombre "${name.trim()}" bajo el mismo padre`,
       );
     }
 
@@ -83,14 +76,13 @@ export class OrgUnitsService {
           tenantId: normalizedTenantId,
           organizationId: normalizedOrganizationId,
           name: name.trim(),
-          slug,
           ...(normalizedParentId ? { parentId: normalizedParentId } : {}),
         },
       });
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
         throw new ConflictException(
-          `Ya existe una unidad con el slug "${slug}" bajo el mismo padre`,
+          `Ya existe una unidad con el nombre "${name.trim()}" bajo el mismo padre`,
         );
       }
 
@@ -149,6 +141,112 @@ export class OrgUnitsService {
     return orgUnit;
   }
 
+  async update(
+    tenantId: string,
+    organizationId: string,
+    id: string,
+    dto: UpdateOrgUnitDto,
+  ) {
+    const normalizedTenantId = this.validateTenantId(tenantId);
+    const normalizedOrganizationId = this.validateOrganizationId(organizationId);
+    const normalizedId = this.validateOrgUnitId(id);
+
+    await this.organizationsService.findOneByTenant(
+      normalizedTenantId,
+      normalizedOrganizationId,
+    );
+
+    const existing = await this.prisma.orgUnit.findFirst({
+      where: {
+        id: normalizedId,
+        tenantId: normalizedTenantId,
+        organizationId: normalizedOrganizationId,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(
+        `Unidad con id "${normalizedId}" no encontrada en esta organizacion`,
+      );
+    }
+
+    const data: any = {};
+
+    if (dto.name !== undefined) {
+      const trimmed = dto.name.trim();
+      if (!trimmed) {
+        throw new BadRequestException('El nombre de la unidad es requerido');
+      }
+      data.name = trimmed;
+    }
+
+    if (dto.managerName !== undefined) data.managerName = dto.managerName.trim() || null;
+    if (dto.description !== undefined) data.description = dto.description.trim() || null;
+    if (dto.email !== undefined) data.email = dto.email.trim() || null;
+    if (dto.phone !== undefined) data.phone = dto.phone.trim() || null;
+    if (dto.isActive !== undefined) data.isActive = dto.isActive;
+
+    if (dto.parentId !== undefined) {
+      if (dto.parentId === null || dto.parentId === '') {
+        data.parentId = null;
+      } else {
+        const parent = await this.prisma.orgUnit.findFirst({
+          where: {
+            id: dto.parentId,
+            tenantId: normalizedTenantId,
+            organizationId: normalizedOrganizationId,
+          },
+        });
+        if (!parent) {
+          throw new NotFoundException(
+            `Unidad padre con id "${dto.parentId}" no encontrada en esta organizacion`,
+          );
+        }
+        data.parentId = dto.parentId;
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return existing;
+    }
+
+    return await this.prisma.orgUnit.update({
+      where: { id: normalizedId },
+      data,
+    });
+  }
+
+  async remove(tenantId: string, organizationId: string, id: string) {
+    const normalizedTenantId = this.validateTenantId(tenantId);
+    const normalizedOrganizationId = this.validateOrganizationId(organizationId);
+    const normalizedId = this.validateOrgUnitId(id);
+
+    await this.organizationsService.findOneByTenant(
+      normalizedTenantId,
+      normalizedOrganizationId,
+    );
+
+    const existing = await this.prisma.orgUnit.findFirst({
+      where: {
+        id: normalizedId,
+        tenantId: normalizedTenantId,
+        organizationId: normalizedOrganizationId,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(
+        `Unidad con id "${normalizedId}" no encontrada en esta organizacion`,
+      );
+    }
+
+    await this.prisma.orgUnit.delete({
+      where: { id: normalizedId },
+    });
+
+    return { message: 'Unidad eliminada exitosamente' };
+  }
+
   private validateTenantId(tenantId: string): string {
     if (!tenantId || !tenantId.trim()) {
       throw new BadRequestException('El tenantId es requerido');
@@ -183,17 +281,6 @@ export class OrgUnitsService {
     }
 
     return parentId.trim();
-  }
-
-  private normalizeSlug(value: string): string {
-    return value
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/-{2,}/g, '-')
-      .replace(/^-+|-+$/g, '');
   }
 
   private isUniqueConstraintError(error: unknown): boolean {

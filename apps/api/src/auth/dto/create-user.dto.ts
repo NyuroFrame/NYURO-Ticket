@@ -1,6 +1,6 @@
 import { IsString, MinLength, MaxLength, IsIn } from 'class-validator';
 
-const USER_ROLES = ['SUPER_ADMIN', 'ACCOUNT_ADMIN', 'ORG_ADMIN', 'AGENT', 'REQUESTER'] as const;
+const USER_ROLES = ['SUPER_ADMIN', 'ACCOUNT_ADMIN', 'ORG_ADMIN', 'IT_MANAGER', 'AGENT', 'REQUESTER'] as const;
 type UserRole = typeof USER_ROLES[number];
 
 export class CreateUserDto {

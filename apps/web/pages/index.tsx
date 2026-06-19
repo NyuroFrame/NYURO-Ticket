@@ -1,11 +1,25 @@
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useAuth } from '../contexts/auth-context';
 
 function HomeContent() {
   const { user, tenant, organization, logout } = useAuth();
+  const router = useRouter();
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const isAccountAdmin = user?.role === 'ACCOUNT_ADMIN';
+  const isItManager = user?.role === 'IT_MANAGER';
+  const isAgent = user?.role === 'AGENT';
+  const isRequester = user?.role === 'REQUESTER';
+
+  useEffect(() => {
+    if (isItManager && router.pathname === '/') {
+      router.replace('/it-manager/dashboard');
+    } else if (isAgent && router.pathname === '/') {
+      router.replace('/agent/dashboard');
+    }
+  }, [isItManager, isAgent, router]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -27,6 +41,30 @@ function HomeContent() {
                 className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
               >
                 Panel Tenant
+              </Link>
+            )}
+            {isItManager && (
+              <Link
+                href="/it-manager/dashboard"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                Panel IT Manager
+              </Link>
+            )}
+            {isAgent && (
+              <Link
+                href="/agent/dashboard"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                Panel Agente
+              </Link>
+            )}
+            {isRequester && (
+              <Link
+                href="/requester/dashboard"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                Mis Tickets
               </Link>
             )}
             <span className="text-sm text-gray-500">

@@ -35,6 +35,7 @@ model Organization {
   domains  OrganizationDomain[]
   orgUnits OrgUnit[]
   users    User[]
+  tickets  Ticket[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -64,7 +65,10 @@ model OrgUnit {
   organizationId String
   parentId       String?
   name           String
-  slug           String
+  managerName    String?
+  description    String?
+  email          String?
+  phone          String?
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -73,6 +77,8 @@ model OrgUnit {
   organization Organization @relation(fields: [organizationId], references: [id])
   parent       OrgUnit?     @relation("OrgUnitTree", fields: [parentId], references: [id])
   children     OrgUnit[]    @relation("OrgUnitTree")
+  requesters   User[]       @relation("RequesterOrgUnit")
+  tickets      Ticket[]
 
   @@index([tenantId])
   @@index([organizationId])
@@ -95,6 +101,9 @@ model User {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
+  orgUnitId String?
+  orgUnit   OrgUnit? @relation("RequesterOrgUnit", fields: [orgUnitId], references: [id])
+
   assignedTickets Ticket[] @relation("AssignedTickets")
   createdTickets  Ticket[] @relation("CreatedTickets")
 }
@@ -105,12 +114,22 @@ model Ticket {
   description String
   status      String   @default("OPEN")
   priority    String   @default("MEDIUM")
+  organizationId String
+  orgUnitId   String
+  createdById String
+  assigneeId  String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  assigneeId  String?
-  assignee    User?   @relation("AssignedTickets", fields: [assigneeId], references: [id])
-  createdById String
-  createdBy   User    @relation("CreatedTickets", fields: [createdById], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  orgUnit      OrgUnit      @relation(fields: [orgUnitId], references: [id])
+  assignee     User?        @relation("AssignedTickets", fields: [assigneeId], references: [id])
+  createdBy    User         @relation("CreatedTickets", fields: [createdById], references: [id])
+
+  @@index([organizationId])
+  @@index([orgUnitId])
+  @@index([createdById])
+  @@index([assigneeId])
+  @@index([status])
 }
 

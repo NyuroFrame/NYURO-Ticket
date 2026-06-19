@@ -5,6 +5,8 @@ import { OrgRegisterDto } from './dto/org-register.dto';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { OrgLoginDto } from './dto/org-login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateItManagerDto } from './dto/create-it-manager.dto';
+import { CreateAgentDto } from './dto/create-agent.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -27,7 +29,7 @@ export class AuthController {
   async register(@Body() dto: OrgRegisterDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.registerOrgUser(dto);
     res.cookie('token', result.token, COOKIE_OPTIONS);
-    return { user: result.user, tenant: result.tenant, organization: result.organization };
+    return { user: result.user, tenant: result.tenant, organization: result.organization, orgUnit: result.orgUnit };
   }
 
   // Login para SUPER_ADMIN, ACCOUNT_ADMIN y ORG_ADMIN
@@ -45,7 +47,7 @@ export class AuthController {
   async orgLogin(@Body() dto: OrgLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.orgLogin(dto);
     res.cookie('token', result.token, COOKIE_OPTIONS);
-    return { user: result.user, tenant: result.tenant, organization: result.organization };
+    return { user: result.user, tenant: result.tenant, organization: result.organization, orgUnit: result.orgUnit };
   }
 
   @Post('logout')
@@ -66,11 +68,13 @@ export class AuthController {
         role: profile.role,
         tenantId: profile.tenantId,
         organizationId: profile.organizationId,
+        orgUnitId: profile.orgUnitId,
         mustResetPassword: profile.mustResetPassword,
         createdAt: profile.createdAt,
       },
       tenant: profile.tenant,
       organization: profile.organization,
+      orgUnit: profile.orgUnit,
     };
   }
 
@@ -88,6 +92,7 @@ export class AuthController {
       user: result.user,
       tenant: result.tenant,
       organization: result.organization,
+      orgUnit: result.orgUnit,
     };
   }
 
@@ -97,5 +102,27 @@ export class AuthController {
   @Roles('SUPER_ADMIN')
   async createUser(@Body() dto: CreateUserDto) {
     return this.authService.createUserByAdmin(dto);
+  }
+
+  // Crear IT_MANAGER por ACCOUNT_ADMIN
+  @Post('users/it-manager')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ACCOUNT_ADMIN')
+  async createItManager(
+    @Body() dto: CreateItManagerDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.authService.createItManager(dto, user.tenantId);
+  }
+
+  // Crear AGENT por IT_MANAGER
+  @Post('users/agent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('IT_MANAGER')
+  async createAgent(
+    @Body() dto: CreateAgentDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.authService.createAgent(dto, user.tenantId, user.organizationId);
   }
 }

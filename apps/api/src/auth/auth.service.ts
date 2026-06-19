@@ -6,6 +6,8 @@ import { OrgRegisterDto } from './dto/org-register.dto';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { OrgLoginDto } from './dto/org-login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateItManagerDto } from './dto/create-it-manager.dto';
+import { CreateAgentDto } from './dto/create-agent.dto';
 
 @Injectable()
 export class AuthService {
@@ -34,32 +36,44 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
+    const data: any = {
+      name: dto.name,
+      password: hashedPassword,
+      tenantId: organization.tenantId,
+      organizationId: organization.id,
+    };
+
+    if (dto.orgUnitId) {
+      const orgUnit = await this.prisma.orgUnit.findFirst({
+        where: { id: dto.orgUnitId, organizationId: organization.id },
+      });
+      if (!orgUnit) {
+        throw new BadRequestException('Area not found in this organization');
+      }
+      data.orgUnitId = dto.orgUnitId;
+    }
+
     const user = await this.prisma.user.create({
-      data: {
-        name: dto.name,
-        password: hashedPassword,
-        tenantId: organization.tenantId,
-        organizationId: organization.id,
-      },
-      include: { tenant: true, organization: true },
+      data,
+      include: { tenant: true, organization: true, orgUnit: true },
     });
 
     return this.buildAuthResponse(user);
   }
 
-  // Login para SUPER_ADMIN, ACCOUNT_ADMIN y ORG_ADMIN (solo name + password)
+  // Login para SUPER_ADMIN, ACCOUNT_ADMIN, ORG_ADMIN e IT_MANAGER (solo name + password)
   async adminLogin(dto: AdminLoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { name: dto.name },
-      include: { tenant: true, organization: true },
+      include: { tenant: true, organization: true, orgUnit: true },
     });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Solo SUPER_ADMIN, ACCOUNT_ADMIN y ORG_ADMIN pueden usar este login
-    if (user.role !== 'SUPER_ADMIN' && user.role !== 'ACCOUNT_ADMIN' && user.role !== 'ORG_ADMIN') {
+    // Solo SUPER_ADMIN, ACCOUNT_ADMIN, ORG_ADMIN e IT_MANAGER pueden usar este login
+    if (user.role !== 'SUPER_ADMIN' && user.role !== 'ACCOUNT_ADMIN' && user.role !== 'ORG_ADMIN' && user.role !== 'IT_MANAGER') {
       throw new UnauthorizedException('Use the organization login instead');
     }
 
@@ -83,7 +97,7 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { name: dto.name },
-      include: { tenant: true, organization: true },
+      include: { tenant: true, organization: true, orgUnit: true },
     });
 
     if (!user) {
@@ -146,10 +160,84 @@ export class AuthService {
     };
   }
 
+  // Crear IT_MANAGER por ACCOUNT_ADMIN
+  async createItManager(dto: CreateItManagerDto, tenantId: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { name: dto.name },
+    });
+    if (existing) {
+      throw new ConflictException('Name already taken');
+    }
+
+    const organization = await this.prisma.organization.findFirst({
+      where: { id: dto.organizationId, tenantId },
+    });
+
+    if (!organization) {
+      throw new BadRequestException('Organization not found in this tenant');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        password: hashedPassword,
+        role: 'IT_MANAGER',
+        tenantId,
+        organizationId: dto.organizationId,
+      },
+      include: { tenant: true, organization: true },
+    });
+
+    return {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      tenantId: user.tenantId,
+      organizationId: user.organizationId,
+      tenant: user.tenant,
+      organization: user.organization,
+    };
+  }
+
+  // Crear AGENT por IT_MANAGER
+  async createAgent(dto: CreateAgentDto, tenantId: string, organizationId: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { name: dto.name },
+    });
+    if (existing) {
+      throw new ConflictException('Name already taken');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        password: hashedPassword,
+        role: 'AGENT',
+        tenantId,
+        organizationId,
+      },
+      include: { tenant: true, organization: true },
+    });
+
+    return {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      tenantId: user.tenantId,
+      organizationId: user.organizationId,
+      tenant: user.tenant,
+      organization: user.organization,
+    };
+  }
+
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { tenant: true, organization: true },
+      include: { tenant: true, organization: true, orgUnit: true },
     });
 
     if (!user) {
@@ -173,7 +261,7 @@ export class AuthService {
         password: hashedPassword,
         mustResetPassword: false,
       },
-      include: { tenant: true, organization: true },
+      include: { tenant: true, organization: true, orgUnit: true },
     });
 
     return this.buildAuthResponse(user);
@@ -187,6 +275,8 @@ export class AuthService {
     tenant: { id: string; name: string } | null;
     organizationId?: string | null;
     organization?: { id: string; code: string; name: string } | null;
+    orgUnitId?: string | null;
+    orgUnit?: { id: string; name: string } | null;
     mustResetPassword?: boolean;
   }) {
     const payload = {
@@ -206,9 +296,11 @@ export class AuthService {
         role: user.role,
         tenantId: user.tenantId,
         organizationId: user.organizationId,
+        orgUnitId: user.orgUnitId,
       },
       tenant: user.tenant,
       organization: user.organization,
+      orgUnit: user.orgUnit,
       mustResetPassword: user.mustResetPassword ?? false,
     };
   }
