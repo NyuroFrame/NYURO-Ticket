@@ -1,12 +1,23 @@
 import { useState, useCallback } from 'react';
 import { api } from '../lib/api';
 
+export interface TicketAttachment {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  createdAt: string;
+}
+
 export interface Ticket {
   id: string;
   title: string;
   description: string;
   status: string;
   priority: string;
+  resolutionNotes?: string | null;
+  completedAt?: string | null;
   organizationId: string;
   orgUnitId: string;
   createdById: string;
@@ -16,6 +27,11 @@ export interface Ticket {
   createdBy?: { id: string; name: string };
   assignee?: { id: string; name: string } | null;
   orgUnit?: { id: string; name: string };
+  attachments?: TicketAttachment[];
+}
+
+export interface ResolveTicketData {
+  resolutionNotes?: string;
 }
 
 export interface CreateTicketData {
@@ -122,6 +138,38 @@ export function useTickets() {
     return { success: false as const, error: res.error ?? 'Error al tomar ticket' };
   }, []);
 
+  const resolveTicket = useCallback(async (id: string, data: ResolveTicketData) => {
+    setError(null);
+    const res = await api.patch<Ticket>(`/tickets/${id}/resolve`, data);
+    if (res.data) {
+      setTickets((prev) =>
+        prev.map((t) => (t.id === id ? res.data! : t))
+      );
+      return { success: true as const, ticket: res.data };
+    }
+    setError(res.error ?? 'Error al finalizar ticket');
+    return { success: false as const, error: res.error ?? 'Error al finalizar ticket' };
+  }, []);
+
+  const uploadAttachment = useCallback(async (id: string, file: File) => {
+    setError(null);
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.postFormData<TicketAttachment>(`/tickets/${id}/attachments`, formData);
+    if (res.data) {
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === id
+            ? { ...t, attachments: [...(t.attachments ?? []), res.data!] }
+            : t
+        )
+      );
+      return { success: true as const, attachment: res.data };
+    }
+    setError(res.error ?? 'Error al subir adjunto');
+    return { success: false as const, error: res.error ?? 'Error al subir adjunto' };
+  }, []);
+
   return {
     tickets,
     loading,
@@ -133,5 +181,7 @@ export function useTickets() {
     updateTicket,
     assignTicket,
     takeTicket,
+    resolveTicket,
+    uploadAttachment,
   };
 }

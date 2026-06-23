@@ -8,9 +8,24 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 
+interface AttachmentInput {
+  filename: string;
+  originalname: string;
+  mimeType: string;
+  size: number;
+  url: string;
+}
+
 @Injectable()
 export class TicketsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly ticketIncludes = {
+    createdBy: { select: { id: true, name: true } },
+    assignee: { select: { id: true, name: true } },
+    orgUnit: { select: { id: true, name: true } },
+    attachments: { select: { id: true, filename: true, mimeType: true, size: true, url: true, createdAt: true } },
+  };
 
   async create(userId: string, organizationId: string, orgUnitId: string, dto: CreateTicketDto) {
     if (!dto.title || !dto.title.trim()) {
@@ -43,11 +58,7 @@ export class TicketsService {
     return this.prisma.ticket.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true } },
-        orgUnit: { select: { id: true, name: true } },
-      },
+      include: this.ticketIncludes,
     });
   }
 
@@ -55,11 +66,7 @@ export class TicketsService {
     return this.prisma.ticket.findMany({
       where: { assigneeId },
       orderBy: { createdAt: 'desc' },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true } },
-        orgUnit: { select: { id: true, name: true } },
-      },
+      include: this.ticketIncludes,
     });
   }
 
@@ -67,23 +74,14 @@ export class TicketsService {
     return this.prisma.ticket.findMany({
       where: { createdById },
       orderBy: { createdAt: 'desc' },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true } },
-        orgUnit: { select: { id: true, name: true } },
-      },
+      include: this.ticketIncludes,
     });
   }
 
   async findOne(id: string, organizationId?: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true } },
-        orgUnit: { select: { id: true, name: true } },
-        organization: { select: { id: true, name: true } },
-      },
+      include: this.ticketIncludes,
     });
 
     if (!ticket) {
@@ -113,11 +111,7 @@ export class TicketsService {
     return this.prisma.ticket.update({
       where: { id },
       data,
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true } },
-        orgUnit: { select: { id: true, name: true } },
-      },
+      include: this.ticketIncludes,
     });
   }
 
@@ -135,11 +129,7 @@ export class TicketsService {
     return this.prisma.ticket.update({
       where: { id },
       data: { assigneeId },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true } },
-        orgUnit: { select: { id: true, name: true } },
-      },
+      include: this.ticketIncludes,
     });
   }
 
@@ -161,11 +151,43 @@ export class TicketsService {
     return this.prisma.ticket.update({
       where: { id },
       data: { assigneeId: agentId },
-      include: {
-        createdBy: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true } },
-        orgUnit: { select: { id: true, name: true } },
+      include: this.ticketIncludes,
+    });
+  }
+
+  async addAttachment(id: string, organizationId: string, file: AttachmentInput) {
+    const ticket = await this.findOne(id, organizationId);
+    return this.prisma.ticketAttachment.create({
+      data: {
+        ticketId: ticket.id,
+        filename: file.filename,
+        mimeType: file.mimeType,
+        size: file.size,
+        url: file.url,
       },
+      select: { id: true, filename: true, mimeType: true, size: true, url: true, createdAt: true },
+    });
+  }
+
+  async resolve(id: string, organizationId: string, agentId: string, resolutionNotes?: string) {
+    const ticket = await this.findOne(id, organizationId);
+
+    if (ticket.assigneeId !== agentId) {
+      throw new ForbiddenException('Solo el agente asignado puede resolver este ticket');
+    }
+
+    if (ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') {
+      throw new BadRequestException('El ticket ya esta finalizado');
+    }
+
+    return this.prisma.ticket.update({
+      where: { id },
+      data: {
+        status: 'RESOLVED',
+        resolutionNotes: resolutionNotes ? resolutionNotes.trim() : null,
+        completedAt: new Date(),
+      },
+      include: this.ticketIncludes,
     });
   }
 }

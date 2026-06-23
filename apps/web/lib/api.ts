@@ -8,12 +8,18 @@ export interface ApiResponse<T = unknown> {
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
+  isFormData = false,
 ): Promise<ApiResponse<T>> {
   try {
+    const headers: Record<string, string> = {};
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
+        ...headers,
         ...options.headers,
       },
       ...options,
@@ -35,6 +41,8 @@ export const api = {
   get: <T>(endpoint: string) => request<T>(endpoint, { method: 'GET' }),
   post: <T>(endpoint: string, body: unknown) =>
     request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  postFormData: <T>(endpoint: string, body: FormData) =>
+    request<T>(endpoint, { method: 'POST', body }, true),
   patch: <T>(endpoint: string, body: unknown) =>
     request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),

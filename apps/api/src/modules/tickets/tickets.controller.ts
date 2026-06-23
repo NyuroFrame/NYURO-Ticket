@@ -8,7 +8,12 @@ import {
   UseGuards,
   ForbiddenException,
   BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -16,6 +21,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { AssignTicketDto } from './dto/assign-ticket.dto';
+import { ResolveTicketDto } from './dto/resolve-ticket.dto';
 import { TicketsService } from './tickets.service';
 
 interface AuthUser {
@@ -142,5 +148,61 @@ export class TicketsController {
       throw new BadRequestException('Usuario no tiene organizacion asignada');
     }
     return this.ticketsService.take(id, user.organizationId, user.id);
+  }
+
+  @Post(':id/attachments')
+  @UseGuards(RolesGuard)
+  @Roles('AGENT', 'IT_MANAGER')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/tickets',
+        filename: (_req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `${unique}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Solo se permiten imagenes'), false);
+        }
+      },
+    }),
+  )
+  async uploadAttachment(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthUser,
+  ) {
+    if (!user.organizationId) {
+      throw new BadRequestException('Usuario no tiene organizacion asignada');
+    }
+    if (!file) {
+      throw new BadRequestException('No se envio ningun archivo');
+    }
+    return this.ticketsService.addAttachment(id, user.organizationId, {
+      filename: file.filename,
+      originalname: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      url: `/uploads/tickets/${file.filename}`,
+    });
+  }
+
+  @Patch(':id/resolve')
+  @UseGuards(RolesGuard)
+  @Roles('AGENT')
+  async resolve(
+    @Param('id') id: string,
+    @Body() dto: ResolveTicketDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    if (!user.organizationId) {
+      throw new BadRequestException('Usuario no tiene organizacion asignada');
+    }
+    return this.ticketsService.resolve(id, user.organizationId, user.id, dto.resolutionNotes);
   }
 }
