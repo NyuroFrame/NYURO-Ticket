@@ -109,6 +109,19 @@ export function useTickets() {
     return { success: false as const, error: res.error ?? 'Error al asignar ticket' };
   }, []);
 
+  const takeTicket = useCallback(async (id: string) => {
+    setError(null);
+    const res = await api.patch<Ticket>(`/tickets/${id}/take`);
+    if (res.data) {
+      setTickets((prev) =>
+        prev.map((t) => (t.id === id ? res.data! : t))
+      );
+      return { success: true as const, ticket: res.data };
+    }
+    setError(res.error ?? 'Error al tomar ticket');
+    return { success: false as const, error: res.error ?? 'Error al tomar ticket' };
+  }, []);
+
   return {
     tickets,
     loading,
@@ -119,5 +132,6 @@ export function useTickets() {
     createTicket,
     updateTicket,
     assignTicket,
+    takeTicket,
   };
 }

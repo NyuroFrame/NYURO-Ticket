@@ -142,4 +142,30 @@ export class TicketsService {
       },
     });
   }
+
+  async take(id: string, organizationId: string, agentId: string) {
+    const ticket = await this.findOne(id, organizationId);
+
+    if (ticket.assigneeId) {
+      throw new BadRequestException('El ticket ya tiene un agente asignado');
+    }
+
+    const agent = await this.prisma.user.findFirst({
+      where: { id: agentId, organizationId, role: 'AGENT' },
+    });
+
+    if (!agent) {
+      throw new BadRequestException('Agente no encontrado en esta organizacion');
+    }
+
+    return this.prisma.ticket.update({
+      where: { id },
+      data: { assigneeId: agentId },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+        assignee: { select: { id: true, name: true } },
+        orgUnit: { select: { id: true, name: true } },
+      },
+    });
+  }
 }

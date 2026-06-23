@@ -5,13 +5,20 @@ import { useTickets } from '../../hooks/useTickets';
 
 function AgentDashboardContent() {
   const { user, logout } = useAuth();
-  const { tickets, loading, error, fetchAssignedTickets, updateTicket } = useTickets();
+  const { tickets, loading, error, fetchOrganizationTickets, updateTicket, takeTicket } = useTickets();
   const [statusUpdate, setStatusUpdate] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [takingId, setTakingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAssignedTickets();
-  }, [fetchAssignedTickets]);
+    fetchOrganizationTickets();
+  }, [fetchOrganizationTickets]);
+
+  const handleTake = async (ticketId: string) => {
+    setTakingId(ticketId);
+    await takeTicket(ticketId);
+    setTakingId(null);
+  };
 
   const handleStatusUpdate = async (ticketId: string) => {
     if (!statusUpdate) return;
@@ -20,6 +27,9 @@ function AgentDashboardContent() {
     setUpdatingId(null);
     setStatusUpdate('');
   };
+
+  const isAssignedToMe = (ticket: typeof tickets[number]) => ticket.assigneeId === user?.id;
+  const isUnassigned = (ticket: typeof tickets[number]) => !ticket.assigneeId;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,7 +73,7 @@ function AgentDashboardContent() {
                 )}
                 {!loading && tickets.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No tienes tickets asignados</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No hay tickets disponibles</td>
                   </tr>
                 )}
                 {tickets.map((ticket) => (
@@ -84,27 +94,41 @@ function AgentDashboardContent() {
                     <td className="px-4 py-3 text-sm text-gray-500">{ticket.createdBy?.name}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {updatingId === ticket.id ? (
-                          <span className="text-sm text-gray-500">Actualizando...</span>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={statusUpdate}
-                              onChange={(e) => setStatusUpdate(e.target.value)}
-                              className="text-sm border border-gray-300 rounded px-2 py-1"
-                            >
-                              <option value="">Cambiar estado</option>
-                              <option value="IN_PROGRESS">En progreso</option>
-                              <option value="RESOLVED">Resuelto</option>
-                              <option value="CLOSED">Cerrado</option>
-                            </select>
-                            <button
-                              onClick={() => handleStatusUpdate(ticket.id)}
-                              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              Guardar
-                            </button>
-                          </div>
+                        {isUnassigned(ticket) && (
+                          <button
+                            onClick={() => handleTake(ticket.id)}
+                            disabled={takingId === ticket.id}
+                            className="text-sm text-green-600 hover:text-green-800 font-medium disabled:text-gray-400"
+                          >
+                            {takingId === ticket.id ? 'Tomando...' : 'Tomar'}
+                          </button>
+                        )}
+                        {isAssignedToMe(ticket) && (
+                          updatingId === ticket.id ? (
+                            <span className="text-sm text-gray-500">Actualizando...</span>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={statusUpdate}
+                                onChange={(e) => setStatusUpdate(e.target.value)}
+                                className="text-sm border border-gray-300 rounded px-2 py-1"
+                              >
+                                <option value="">Cambiar estado</option>
+                                <option value="IN_PROGRESS">En progreso</option>
+                                <option value="RESOLVED">Resuelto</option>
+                                <option value="CLOSED">Cerrado</option>
+                              </select>
+                              <button
+                                onClick={() => handleStatusUpdate(ticket.id)}
+                                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Guardar
+                              </button>
+                            </div>
+                          )
+                        )}
+                        {!isUnassigned(ticket) && !isAssignedToMe(ticket) && (
+                          <span className="text-sm text-gray-400">Asignado a {ticket.assignee?.name}</span>
                         )}
                       </div>
                     </td>

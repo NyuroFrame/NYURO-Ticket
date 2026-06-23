@@ -52,7 +52,7 @@ export class TicketsController {
 
   @Get('organization')
   @UseGuards(RolesGuard)
-  @Roles('IT_MANAGER')
+  @Roles('IT_MANAGER', 'AGENT')
   async findByOrganization(@CurrentUser() user: AuthUser) {
     if (!user.organizationId) {
       throw new BadRequestException('Usuario no tiene organizacion asignada');
@@ -77,8 +77,8 @@ export class TicketsController {
     if (user.role === 'REQUESTER' && ticket.createdById !== user.id) {
       throw new ForbiddenException('No tienes acceso a este ticket');
     }
-    // AGENT solo ve tickets asignados a él
-    if (user.role === 'AGENT' && ticket.assigneeId !== user.id) {
+    // AGENT ve tickets de su organizacion
+    if (user.role === 'AGENT' && ticket.organizationId !== user.organizationId) {
       throw new ForbiddenException('No tienes acceso a este ticket');
     }
     // IT_MANAGER solo ve tickets de su organización
@@ -95,9 +95,9 @@ export class TicketsController {
     @CurrentUser() user: AuthUser,
   ) {
     const ticket = await this.ticketsService.findOne(id);
-    // AGENT solo puede actualizar tickets asignados a él
+    // AGENT puede actualizar tickets de su organizacion (normalmente solo status)
     if (user.role === 'AGENT') {
-      if (ticket.assigneeId !== user.id) {
+      if (ticket.organizationId !== user.organizationId) {
         throw new ForbiddenException('No tienes acceso a este ticket');
       }
       // AGENT solo puede cambiar status
@@ -129,5 +129,18 @@ export class TicketsController {
       throw new BadRequestException('Usuario no tiene organizacion asignada');
     }
     return this.ticketsService.assign(id, user.organizationId, dto.assigneeId);
+  }
+
+  @Patch(':id/take')
+  @UseGuards(RolesGuard)
+  @Roles('AGENT')
+  async take(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    if (!user.organizationId) {
+      throw new BadRequestException('Usuario no tiene organizacion asignada');
+    }
+    return this.ticketsService.take(id, user.organizationId, user.id);
   }
 }
