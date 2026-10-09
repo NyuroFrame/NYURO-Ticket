@@ -127,7 +127,7 @@ export function useTickets() {
 
   const takeTicket = useCallback(async (id: string) => {
     setError(null);
-    const res = await api.patch<Ticket>(`/tickets/${id}/take`);
+    const res = await api.patch<Ticket>(`/tickets/${id}/take`, {});
     if (res.data) {
       setTickets((prev) =>
         prev.map((t) => (t.id === id ? res.data! : t))
