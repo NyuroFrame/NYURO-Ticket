@@ -12,10 +12,12 @@ import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: isProd,
+  sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
   path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
