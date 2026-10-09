@@ -31,6 +31,18 @@ export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
 ) {
-  const server = await getServer();
-  server(req, res);
+  try {
+    const server = await getServer();
+    server(req, res);
+  } catch (err) {
+    res.statusCode = 500;
+    res.setHeader('content-type', 'application/json');
+    res.end(
+      JSON.stringify({
+        debug: true,
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      }),
+    );
+  }
 }
