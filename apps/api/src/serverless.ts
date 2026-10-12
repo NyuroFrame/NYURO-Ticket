@@ -1,15 +1,16 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import type { IncomingMessage, ServerResponse } from 'http';
+import { AppModule } from './app.module';
 
 let cachedServer: ((req: IncomingMessage, res: ServerResponse) => void) | null =
   null;
 
 async function getServer() {
   if (!cachedServer) {
-    const { NestFactory } = await import('@nestjs/core');
-    const { ValidationPipe } = await import('@nestjs/common');
-    const { default: cookieParser } = await import('cookie-parser');
-    const { AppModule } = await import('../src/app.module');
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
     app.use(cookieParser());
     app.enableCors({
