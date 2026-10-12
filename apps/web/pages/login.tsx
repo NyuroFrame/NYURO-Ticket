@@ -5,8 +5,14 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../contexts/auth-context';
 import { PasswordInput } from '../components/PasswordInput';
+import { AuthLayout, AuthError } from '../components/AuthLayout';
 
 type LoginMode = 'admin' | 'org';
+
+const MODE_META: Record<LoginMode, { hint: string }> = {
+  org: { hint: 'Para Agentes y Solicitantes de una organización' },
+  admin: { hint: 'Para Super Admin, Account Admin, IT Manager y Org Admin' },
+};
 
 export default function LoginPage() {
   const [mode, setMode] = useState<LoginMode>('org');
@@ -14,126 +20,124 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { adminLogin, orgLogin } = useAuth();
   const router = useRouter();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-
-    let err: string | null;
-    if (mode === 'admin') {
-      err = await adminLogin(name, password);
-    } else {
-      err = await orgLogin(orgCode, name, password);
+    setSubmitting(true);
+    try {
+      const err =
+        mode === 'admin'
+          ? await adminLogin(name.trim(), password)
+          : await orgLogin(orgCode.trim(), name.trim(), password);
+      if (err) setError(err);
+      else router.replace('/');
+    } finally {
+      setSubmitting(false);
     }
-
-    if (err) setError(err);
-    else router.replace('/');
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Iniciar sesión
-          </h1>
-
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-            <button
-              type="button"
-              onClick={() => setMode('org')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                mode === 'org'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Organización
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('admin')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                mode === 'admin'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Admin / IT Manager
-            </button>
-          </div>
-
-          {mode === 'admin' ? (
-            <p className="text-xs text-gray-500 text-center mb-4">
-              Para Super Admin, Account Admin, IT Manager y Org Admin
-            </p>
-          ) : (
-            <p className="text-xs text-gray-500 text-center mb-4">
-              Para Agentes y Solicitantes de una organización
-            </p>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'org' && (
-              <div>
-                <label htmlFor="orgCode" className="block text-sm font-medium text-gray-700 mb-1">
-                  Código de Organización
-                </label>
-                <input
-                  id="orgCode"
-                  type="text"
-                  value={orgCode}
-                  onChange={(e) => setOrgCode(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ej: acme-corp"
-                />
-              </div>
-            )}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre / Email
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <PasswordInput
-              label="Contraseña"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="Ingresa tu contraseña"
-            />
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
-            )}
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-            >
-              {mode === 'admin' ? 'Iniciar sesión' : 'Iniciar sesión'}
-            </button>
-          </form>
-          
-          {mode === 'org' && (
-            <p className="mt-6 text-sm text-center text-gray-500">
-              ¿No tienes cuenta?{' '}
-              <Link href="/register" className="text-blue-600 hover:text-blue-700 font-medium">
-                Registrarse
-              </Link>
-            </p>
-          )}
-        </div>
+    <AuthLayout
+      title="Iniciar sesión"
+      subtitle={MODE_META[mode].hint}
+      footer={
+        mode === 'org' ? (
+          <>
+            ¿No tienes cuenta?{' '}
+            <Link href="/register" className="font-medium text-brand-600 hover:text-brand-700">
+              Registrarse
+            </Link>
+          </>
+        ) : (
+          <>Acceso restringido a roles administrativos</>
+        )
+      }
+    >
+      {/* Segmented control empresarial */}
+      <div
+        role="tablist"
+        aria-label="Tipo de acceso"
+        className="mb-5 grid grid-cols-2 gap-1 rounded-md border border-line bg-slate-50 p-1"
+      >
+        {(['org', 'admin'] as LoginMode[]).map((m) => (
+          <button
+            key={m}
+            role="tab"
+            aria-selected={mode === m}
+            type="button"
+            onClick={() => {
+              setMode(m);
+              setError('');
+            }}
+            className={`rounded px-3 py-1.5 text-[13px] font-medium transition-colors ${
+              mode === m
+                ? 'bg-white text-ink-900 shadow-card ring-1 ring-line'
+                : 'text-ink-500 hover:text-ink-700'
+            }`}
+          >
+            {m === 'org' ? 'Organización' : 'Admin / IT'}
+          </button>
+        ))}
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {mode === 'org' && (
+          <div>
+            <label htmlFor="orgCode" className="label">
+              Código de Organización
+            </label>
+            <input
+              id="orgCode"
+              type="text"
+              value={orgCode}
+              onChange={(e) => setOrgCode(e.target.value)}
+              required
+              autoComplete="organization"
+              className="input ref-mono"
+              placeholder="Ej: acme-corp"
+            />
+          </div>
+        )}
+        <div>
+          <label htmlFor="name" className="label">
+            Nombre / Email
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            autoComplete="username"
+            className="input"
+            placeholder="Tu usuario"
+          />
+        </div>
+        <PasswordInput
+          label="Contraseña"
+          id="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          placeholder="Ingresa tu contraseña"
+        />
+        <AuthError message={error} />
+        <button type="submit" disabled={submitting} className="btn-primary w-full justify-center !py-2.5">
+          {submitting ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              Verificando…
+            </span>
+          ) : (
+            'Iniciar sesión'
+          )}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

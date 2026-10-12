@@ -10,21 +10,21 @@ export function PasswordInput({ label, id, className = '', ...props }: PasswordI
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="relative">
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+    <div>
+      <label htmlFor={id} className="label">
         {label}
       </label>
       <div className="relative">
         <input
           id={id}
           type={visible ? 'text' : 'password'}
-          className={`w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${className}`}
+          className={`input pr-10 ${className}`}
           {...props}
         />
         <button
           type="button"
           onClick={() => setVisible((prev) => !prev)}
-          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+          className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-400 hover:text-ink-700 focus:outline-none"
           tabIndex={-1}
           aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         >

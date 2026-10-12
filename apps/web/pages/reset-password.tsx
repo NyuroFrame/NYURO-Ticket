@@ -2,14 +2,17 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/router';
+import { CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { PasswordInput } from '../components/PasswordInput';
+import { AuthLayout, AuthError } from '../components/AuthLayout';
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { resetPassword } = useAuth();
   const router = useRouter();
 
@@ -27,66 +30,68 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    const err = await resetPassword(newPassword);
-    if (err) {
-      setError(err);
-    } else {
-      setSuccess(true);
-      setTimeout(() => {
-        router.replace('/');
-      }, 1500);
+    setSubmitting(true);
+    try {
+      const err = await resetPassword(newPassword);
+      if (err) {
+        setError(err);
+      } else {
+        setSuccess(true);
+        setTimeout(() => {
+          router.replace('/');
+        }, 1500);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-            Restablecer contraseña
-          </h1>
-          <p className="text-sm text-gray-500 text-center mb-6">
-            Es necesario que cambies tu contraseña antes de continuar.
-          </p>
-
-          {success ? (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-              <p className="text-green-800 font-medium">Contraseña actualizada</p>
-              <p className="text-green-600 text-sm mt-1">Redirigiendo...</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <PasswordInput
-                label="Nueva contraseña"
-                id="newPassword"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="Mínimo 6 caracteres"
-              />
-              <PasswordInput
-                label="Confirmar contraseña"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="Repite la contraseña"
-              />
-              {error && (
-                <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
-              )}
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-              >
-                Guardar contraseña
-              </button>
-            </form>
-          )}
+    <AuthLayout
+      title="Restablecer contraseña"
+      subtitle="Es necesario que cambies tu contraseña antes de continuar."
+    >
+      {success ? (
+        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-5 text-center">
+          <CheckCircle2 size={22} className="mx-auto text-success" />
+          <p className="mt-2 text-sm font-semibold text-ink-900">Contraseña actualizada</p>
+          <p className="mt-0.5 text-[13px] text-ink-500">Redirigiendo al panel…</p>
         </div>
-      </div>
-    </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <PasswordInput
+            label="Nueva contraseña"
+            id="newPassword"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            minLength={6}
+            autoComplete="new-password"
+            placeholder="Mínimo 6 caracteres"
+          />
+          <PasswordInput
+            label="Confirmar contraseña"
+            id="confirmPassword"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={6}
+            autoComplete="new-password"
+            placeholder="Repite la contraseña"
+          />
+          <AuthError message={error} />
+          <button type="submit" disabled={submitting} className="btn-primary w-full justify-center !py-2.5">
+            {submitting ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                Guardando…
+              </span>
+            ) : (
+              'Guardar contraseña'
+            )}
+          </button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }

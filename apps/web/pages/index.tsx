@@ -2,16 +2,22 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { AppShell } from '../components/enterprise/AppShell';
 import { useAuth } from '../contexts/auth-context';
+
+const ROLE_PANEL: Record<string, { href: string; label: string }> = {
+  SUPER_ADMIN: { href: '/admin/tenants', label: 'Abrir Panel Admin' },
+  ACCOUNT_ADMIN: { href: '/tenant/dashboard', label: 'Abrir Panel Tenant' },
+  IT_MANAGER: { href: '/it-manager/dashboard', label: 'Abrir Panel IT Manager' },
+  AGENT: { href: '/agent/dashboard', label: 'Abrir Panel Agente' },
+  REQUESTER: { href: '/requester/dashboard', label: 'Ver Mis Tickets' },
+};
 
 function HomeContent() {
   const { user, tenant, organization, logout } = useAuth();
   const router = useRouter();
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
-  const isAccountAdmin = user?.role === 'ACCOUNT_ADMIN';
   const isItManager = user?.role === 'IT_MANAGER';
   const isAgent = user?.role === 'AGENT';
-  const isRequester = user?.role === 'REQUESTER';
 
   useEffect(() => {
     if (isItManager && router.pathname === '/') {
@@ -21,87 +27,42 @@ function HomeContent() {
     }
   }, [isItManager, isAgent, router]);
 
+  const panel = user ? ROLE_PANEL[user.role] : undefined;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Nyuro Ticket System</h1>
-          <div className="flex items-center gap-4">
-            {isSuperAdmin && (
-              <Link
-                href="/admin/tenants"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-              >
-                Panel Admin
-              </Link>
-            )}
-            {isAccountAdmin && (
-              <Link
-                href="/tenant/dashboard"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-              >
-                Panel Tenant
-              </Link>
-            )}
-            {isItManager && (
-              <Link
-                href="/it-manager/dashboard"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-              >
-                Panel IT Manager
-              </Link>
-            )}
-            {isAgent && (
-              <Link
-                href="/agent/dashboard"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-              >
-                Panel Agente
-              </Link>
-            )}
-            {isRequester && (
-              <Link
-                href="/requester/dashboard"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-              >
-                Mis Tickets
-              </Link>
-            )}
-            <span className="text-sm text-gray-500">
-              {user?.name} · {tenant?.name || 'Sin tenant'}
+    <AppShell role={user?.role} userName={user?.name} onLogout={logout}>
+      <div className="mb-4">
+        <p className="text-xs text-ink-500">Inicio</p>
+        <h1 className="text-lg font-semibold text-ink-900">
+          Bienvenido, {user?.name}
+        </h1>
+        <p className="mt-0.5 text-[13px] text-ink-500">
+          Has iniciado sesión como <span className="font-medium text-ink-700">{user?.role}</span>
+        </p>
+      </div>
+
+      <section className="card p-6">
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-ink-500">
+          {tenant && (
+            <span className="rounded-full border border-line bg-slate-50 px-2.5 py-1">
+              Tenant: <span className="font-medium text-ink-900">{tenant.name}</span>
             </span>
-            <button
-              onClick={logout}
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Cerrar sesión
-            </button>
-          </div>
+          )}
+          {organization && (
+            <span className="rounded-full border border-line bg-slate-50 px-2.5 py-1">
+              Organización: <span className="font-medium text-ink-900">{organization.name}</span>
+            </span>
+          )}
         </div>
-      </header>
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            Bienvenido, {user?.name}
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Has iniciado sesión como <span className="font-medium">{user?.role}</span>
-          </p>
-          <div className="space-y-1 text-sm text-gray-500">
-            {tenant && (
-              <p>
-                Tenant: <span className="font-medium">{tenant.name}</span>
-              </p>
-            )}
-            {organization && (
-              <p>
-                Organización: <span className="font-medium">{organization.name}</span>
-              </p>
-            )}
+        {panel && (
+          <div className="mt-5">
+            <Link href={panel.href} className="btn-primary">
+              {panel.label}
+            </Link>
           </div>
-        </div>
-      </main>
-    </div>
+        )}
+      </section>
+    </AppShell>
   );
 }
 
