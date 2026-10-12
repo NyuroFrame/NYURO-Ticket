@@ -14,7 +14,7 @@ echo -e "${BLUE}🗄️  Aplicando migraciones...${NC}"
 pnpm --filter @nyuro/database exec prisma migrate deploy
 
 echo -e "${BLUE}🔧 Levantando backend en http://localhost:3001${NC}"
-PORT=3001 pnpm --filter @nyuro/api dev &
+PORT=3005 pnpm --filter @nyuro/api dev &
 API_PID=$!
 
 echo -e "${BLUE}🎨 Levantando frontend en http://localhost:3000${NC}"
