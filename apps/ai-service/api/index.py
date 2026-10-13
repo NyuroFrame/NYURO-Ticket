@@ -17,3 +17,5 @@ except Exception:
     )
     def debug_error(path: str):
         return {"debug": True, "path": path, "error": traceback.format_exc()}
+
+# Vercel zero-config entry: exposes the FastAPI app as a serverless function.
