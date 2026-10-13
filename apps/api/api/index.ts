@@ -8,14 +8,17 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   handler = require('../src/serverless').default;
 } catch (err) {
-  handler = async (req, res) => {
+  // Log the full error for Vercel runtime logs; only expose the message
+  // to the client (never the stack trace).
+  // eslint-disable-next-line no-console
+  console.error('[api] failed to load serverless handler:', err);
+  handler = async (_req, res) => {
     res.statusCode = 500;
     res.setHeader('content-type', 'application/json');
     res.end(
       JSON.stringify({
-        debug: 'require-failed',
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
+        error: 'Failed to initialize API',
+        detail: err instanceof Error ? err.message : String(err),
       }),
     );
   };

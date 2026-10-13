@@ -14,6 +14,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { mkdirSync } from 'fs';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -156,7 +157,12 @@ export class TicketsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/tickets',
+        destination: (_req, _file, cb) => {
+          const dir =
+            process.env.UPLOADS_DIR ?? './uploads/tickets';
+          mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
         filename: (_req, file, cb) => {
           const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
           cb(null, `${unique}${extname(file.originalname)}`);
