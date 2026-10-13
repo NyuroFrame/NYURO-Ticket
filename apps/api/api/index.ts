@@ -25,3 +25,5 @@ try {
 }
 
 export default handler;
+
+// Deployed on Vercel as zero-config serverless functions (see vercel.json).
